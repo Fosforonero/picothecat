@@ -50,6 +50,12 @@ function normalizeMedical(json) {
     'active_kcal',
     'caloriesBurned',
   ])
+  const sleepMinutes = pickNumber(json, ['sleepMinutes', 'sleep_min', 'sleep'])
+  const distanceMeters = pickNumber(json, [
+    'distanceMeters',
+    'distance_m',
+    'distance',
+  ])
   const bodyTempC = pickNumber(json, [
     'bodyTempC',
     'body_temp_c',
@@ -64,6 +70,8 @@ function normalizeMedical(json) {
     bpm: bpm != null ? Math.round(bpm) : null,
     steps: steps != null ? Math.round(steps) : null,
     calories: calories != null ? Math.round(calories) : null,
+    sleepMinutes: sleepMinutes != null ? Math.round(sleepMinutes) : null,
+    distanceMeters: distanceMeters != null ? Math.round(distanceMeters) : null,
     bodyTempC: bodyTempC != null ? Number(bodyTempC) : null,
     spo2: spo2 != null ? Math.round(spo2) : null,
     unlock: unlockForKcal(calories),
