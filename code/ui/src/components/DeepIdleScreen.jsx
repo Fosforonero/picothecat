@@ -41,11 +41,25 @@ export default function DeepIdleScreen({ now, weather, weatherStatus, onWake }) 
       window.removeEventListener('keydown', onKey, { capture: true })
   }, [onWake])
 
+  const onWakePointerDown = (e) => {
+    // Prevent click-through: pointerdown triggers wake, but must not also activate the next screen CTA.
+    e.preventDefault()
+    e.stopPropagation()
+    onWake()
+  }
+
+  const onWakeClick = (e) => {
+    // Extra guard for browsers that still emit click after pointerdown.
+    e.preventDefault()
+    e.stopPropagation()
+  }
+
   return (
     <button
       type="button"
       className="deep-idle-screen"
-      onPointerDown={onWake}
+      onPointerDown={onWakePointerDown}
+      onClick={onWakeClick}
       aria-label="Tocca per svegliare"
     >
       <div className="deep-idle-screen__stack" aria-hidden>

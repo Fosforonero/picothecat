@@ -49,6 +49,14 @@ body {
   flex-direction: column;
 }
 
+/* Kiosk: never show pointer cursor (even after clicks) */
+html,
+body,
+#root,
+* {
+  cursor: none !important;
+}
+
 button,
 [role='button'],
 summary {
