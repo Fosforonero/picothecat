@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { unlockForKcal } from '../data/medicalUnlocks.js'
 
 const CACHE_KEY = 'picoclaw.medical.v1'
+const HISTORY_KEY = 'picoclaw.medical.history.v1'
+const HISTORY_MAX = 96
 
 function safeJsonParse(str) {
   try {
@@ -24,6 +26,24 @@ function saveCache(payload) {
   if (typeof window === 'undefined') return
   try {
     window.localStorage?.setItem(CACHE_KEY, JSON.stringify(payload))
+  } catch {
+    // ignore
+  }
+}
+
+function loadHistory() {
+  if (typeof window === 'undefined') return []
+  const raw = window.localStorage?.getItem(HISTORY_KEY)
+  if (!raw) return []
+  const j = safeJsonParse(raw)
+  if (!Array.isArray(j)) return []
+  return j.filter((x) => x && typeof x === 'object')
+}
+
+function saveHistory(items) {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage?.setItem(HISTORY_KEY, JSON.stringify(items))
   } catch {
     // ignore
   }
@@ -81,26 +101,69 @@ function normalizeMedical(json) {
 export function useMedical(baseUrl, { intervalMs = 20000 } = {}) {
   const [state, setState] = useState(() => {
     const cached = loadCache()
-    if (cached?.data) return { status: 'ready', data: cached.data, lastError: null }
-    return { status: 'loading', data: null, lastError: null }
+    const history = loadHistory()
+    if (cached?.data) {
+      return { status: 'ready', data: cached.data, lastError: null, history }
+    }
+    return { status: 'loading', data: null, lastError: null, history }
   })
 
   useEffect(() => {
     let alive = true
     const controller = new AbortController()
-    const url =
-      baseUrl === '' ? '/api/medical' : `${baseUrl.replace(/\/$/, '')}/api/medical`
+    const base = baseUrl === '' ? '' : baseUrl.replace(/\/$/, '')
+    const candidates = [
+      base ? `${base}/api/medical` : null,
+      base ? `${base}/api/medical/latest` : null,
+      '/api/medical',
+      '/api/medical/latest',
+    ].filter(Boolean)
 
     const tick = async () => {
       if (!alive) return
       setState((s) => ({ ...s, status: s.data ? 'ready' : 'loading' }))
       try {
-        const res = await fetch(url, { signal: controller.signal, cache: 'no-store' })
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        const json = await res.json()
+        /** @type {any} */
+        let json = null
+        let lastHttpErr = null
+        for (const url of candidates) {
+          try {
+            const res = await fetch(url, {
+              signal: controller.signal,
+              cache: 'no-store',
+            })
+            if (!res.ok) {
+              lastHttpErr = `HTTP ${res.status}`
+              continue
+            }
+            json = await res.json()
+            break
+          } catch (e) {
+            // Network/CORS error: try next candidate.
+            lastHttpErr = e?.message ?? 'Failed to fetch'
+          }
+        }
+        if (json == null) throw new Error(lastHttpErr ?? 'Failed to fetch')
+
         const data = normalizeMedical(json)
         if (!alive) return
-        setState({ status: 'ready', data, lastError: null })
+        setState((s) => {
+          const nextHistory = [
+            ...s.history,
+            {
+              t: Date.now(),
+              bpm: data.bpm,
+              steps: data.steps,
+              calories: data.calories,
+              sleepMinutes: data.sleepMinutes,
+              distanceMeters: data.distanceMeters,
+              bodyTempC: data.bodyTempC,
+              spo2: data.spo2,
+            },
+          ].slice(-HISTORY_MAX)
+          saveHistory(nextHistory)
+          return { status: 'ready', data, lastError: null, history: nextHistory }
+        })
         saveCache({ ts: Date.now(), data })
       } catch (e) {
         if (e?.name === 'AbortError') return

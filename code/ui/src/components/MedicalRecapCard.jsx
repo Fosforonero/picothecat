@@ -20,15 +20,32 @@ function fmtSleep(mins) {
   return `${h}h ${m.toString().padStart(2, '0')}m`
 }
 
-export default function MedicalRecapCard({ medical, status = 'ready' }) {
+export default function MedicalRecapCard({
+  medical,
+  status = 'ready',
+  lastError = null,
+  onClick,
+}) {
   const d = medical ?? {}
 
+  const Root = onClick ? 'button' : 'article'
   return (
-    <article className="medical-recap" aria-label="Riepilogo salute">
+    <Root
+      type={onClick ? 'button' : undefined}
+      className={onClick ? 'medical-recap medical-recap--interactive' : 'medical-recap'}
+      aria-label="Riepilogo salute"
+      onClick={onClick}
+    >
       <div className="medical-recap__head">
         <div className="medical-recap__title">Salute</div>
         <div className="medical-recap__hint">
-          {status === 'loading' ? '…' : status === 'error' ? 'offline' : 'Oggi'}
+          {status === 'loading'
+            ? '…'
+            : status === 'error'
+              ? lastError
+                ? `offline · ${lastError}`
+                : 'offline'
+              : 'Oggi'}
         </div>
       </div>
 
@@ -51,7 +68,7 @@ export default function MedicalRecapCard({ medical, status = 'ready' }) {
         </div>
       </div>
       {d.unlock ? <div className="medical-recap__unlock">{d.unlock}</div> : null}
-    </article>
+    </Root>
   )
 }
 

@@ -3,7 +3,7 @@ const ACTIONS = [
   { id: 'chat', label: 'Chat' },
   { id: 'voice', label: 'Voce' },
   { id: 'actions', label: 'Stato' },
-  { id: 'medical', label: 'Medici' },
+  { id: 'medical', label: 'Salute' },
   { id: 'settings', label: 'Impostazioni' },
 ]
 

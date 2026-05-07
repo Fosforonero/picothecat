@@ -567,6 +567,18 @@ button.weather-card.weather-card--interactive {
   gap: 12px;
 }
 
+.medical-recap--interactive {
+  width: 100%;
+  text-align: left;
+  appearance: none;
+  border: 1px solid var(--border-soft);
+}
+
+.medical-recap--interactive:active {
+  transform: translateY(1px) scale(0.995);
+  filter: brightness(1.06);
+}
+
 .medical-recap__head {
   display: flex;
   align-items: baseline;
@@ -622,6 +634,11 @@ button.weather-card.weather-card--interactive {
   color: var(--text-muted);
   font-weight: 750;
   letter-spacing: 0.01em;
+}
+
+.sparkline {
+  opacity: 0.95;
+  filter: drop-shadow(0 10px 18px color-mix(in srgb, var(--text) 18%, transparent));
 }
 
 /* Velatura sopra il glifo: integra l’icona nello sfondo e sostiene la lettura del testo */

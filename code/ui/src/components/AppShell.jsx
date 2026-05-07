@@ -137,6 +137,7 @@ export default function AppShell() {
             sunTimes={sunTimes}
             themeMode={themeMode}
             onActivate={goActive}
+            onOpenMedical={() => setPhase(UI_PHASE.MEDICAL)}
             medical={medical}
           />
         ) : null}

@@ -8,7 +8,7 @@ function statusDotClass(status) {
  * @param {{
  *   title: string
  *   value: string
- *   detail?: string
+ *   detail?: any
  *   healthStatus?: 'online' | 'offline' | 'checking'
  *   variant?: 'default' | 'ambient'
  *   personality?: 'home' | 'signal'
@@ -47,7 +47,9 @@ export default function StatusCard({
         ) : null}
         <div className="status-card__value">{value}</div>
       </div>
-      {detail ? <div className="status-card__detail">{detail}</div> : null}
+      {detail != null && detail !== '' ? (
+        <div className="status-card__detail">{detail}</div>
+      ) : null}
     </Tag>
   )
 }
