@@ -124,25 +124,63 @@ export function formatGeoIpLabel(geo) {
 export async function geocodeAddressIt(query) {
   const q = String(query ?? '').trim()
   if (!q) return null
-  const u = new URL('https://geocoding-api.open-meteo.com/v1/search')
-  u.searchParams.set('name', q)
-  u.searchParams.set('count', '1')
-  u.searchParams.set('language', 'it')
-  u.searchParams.set('format', 'json')
 
-  const res = await fetch(u.toString())
-  if (!res.ok) throw new Error(`geocode http ${res.status}`)
-  const j = await res.json()
-  const r = Array.isArray(j?.results) ? j.results[0] : null
-  const lat = Number(r?.latitude)
-  const lon = Number(r?.longitude)
-  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null
+  // 1) Open‑Meteo Geocoding (ottimo per città/località, meno affidabile per indirizzi civici completi)
+  try {
+    const u = new URL('https://geocoding-api.open-meteo.com/v1/search')
+    u.searchParams.set('name', q)
+    u.searchParams.set('count', '1')
+    u.searchParams.set('language', 'it')
+    u.searchParams.set('format', 'json')
 
-  const name = r?.name != null ? String(r.name).trim() : ''
-  const admin1 = r?.admin1 != null ? String(r.admin1).trim() : ''
-  const country = r?.country != null ? String(r.country).trim() : ''
-  const label = [name, admin1, country].filter(Boolean).join(', ') || q
-  return { lat, lon, label }
+    const res = await fetch(u.toString())
+    if (res.ok) {
+      const j = await res.json()
+      const r = Array.isArray(j?.results) ? j.results[0] : null
+      const lat = Number(r?.latitude)
+      const lon = Number(r?.longitude)
+      if (Number.isFinite(lat) && Number.isFinite(lon)) {
+        const name = r?.name != null ? String(r.name).trim() : ''
+        const admin1 = r?.admin1 != null ? String(r.admin1).trim() : ''
+        const country = r?.country != null ? String(r.country).trim() : ''
+        const label = [name, admin1, country].filter(Boolean).join(', ') || q
+        return { lat, lon, label }
+      }
+    }
+  } catch {
+    // fallback below
+  }
+
+  // 2) Nominatim (OSM) — più affidabile sugli indirizzi (via + civico + CAP)
+  // Nota: endpoint pubblico con rate limit, usiamo solo per input manuale in settings.
+  try {
+    const u = new URL('https://nominatim.openstreetmap.org/search')
+    u.searchParams.set('q', q)
+    u.searchParams.set('format', 'json')
+    u.searchParams.set('limit', '1')
+    u.searchParams.set('addressdetails', '1')
+    u.searchParams.set('accept-language', 'it')
+
+    const res = await fetch(u.toString(), {
+      headers: {
+        // Alcuni endpoint rifiutano richieste senza UA referenziale; questo aiuta in dev/prod.
+        'Accept': 'application/json',
+      },
+    })
+    if (!res.ok) throw new Error(`geocode http ${res.status}`)
+    const j = await res.json()
+    const r = Array.isArray(j) ? j[0] : null
+    const lat = Number(r?.lat)
+    const lon = Number(r?.lon)
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null
+    const label =
+      r?.display_name != null && String(r.display_name).trim() !== ''
+        ? String(r.display_name).split(',').slice(0, 3).join(',').trim()
+        : q
+    return { lat, lon, label }
+  } catch {
+    return null
+  }
 }
 
 /**

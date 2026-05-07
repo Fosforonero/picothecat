@@ -3,6 +3,7 @@ import {
   getWeatherCoordinates,
   getConfiguredWeatherLocationLabel,
 } from '../config/runtime.js'
+import { useUnits } from '../hooks/useUnits.js'
 import {
   isBrowserGeolocationUsable,
   requestBrowserCoordinates,
@@ -106,6 +107,7 @@ function savePlaces(list) {
 }
 
 export default function WeatherLocationSettings({ weather }) {
+  const { units, setWindUnit } = useUnits()
   const configured = useMemo(() => getWeatherCoordinates(), [])
   const configuredLabel = useMemo(() => getConfiguredWeatherLocationLabel(), [])
 
@@ -322,12 +324,6 @@ export default function WeatherLocationSettings({ weather }) {
 
   return (
     <section className="settings-panel" aria-label="Impostazioni meteo">
-      <h1 className="settings-title">Impostazioni</h1>
-      <p className="settings-subtitle">
-        Posizione meteo. Se la geolocalizzazione browser non è disponibile, puoi
-        impostare qui una posizione “manuale”.
-      </p>
-
       <div className="settings-card">
         <div className="settings-card__head">
           <h2 className="settings-card__title">Posizione meteo</h2>
@@ -488,6 +484,28 @@ export default function WeatherLocationSettings({ weather }) {
         </div>
 
         {msg ? <p className="settings-msg">{msg}</p> : null}
+      </div>
+
+      <div className="settings-card" aria-label="Unità">
+        <div className="settings-card__head">
+          <h2 className="settings-card__title">Unità</h2>
+          <p className="settings-card__meta">Preferenze visualizzazione</p>
+        </div>
+        <div className="settings-grid">
+          <label className="settings-field settings-field--wide">
+            <span className="settings-field__label">Vento</span>
+            <select
+              className="settings-field__input"
+              value={units.wind}
+              onChange={(e) => setWindUnit(e.target.value)}
+              aria-label="Unità vento"
+            >
+              <option value="ms">m/s</option>
+              <option value="kmh">km/h</option>
+              <option value="kn">nodi</option>
+            </select>
+          </label>
+        </div>
       </div>
     </section>
   )

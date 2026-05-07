@@ -97,6 +97,14 @@ export function useWeather() {
     const cached = loadCache()
     return Array.isArray(cached?.forecast7) ? cached.forecast7 : []
   })
+  const [hourlyToday, setHourlyToday] = useState(() => {
+    const cached = loadCache()
+    return Array.isArray(cached?.hourlyToday) ? cached.hourlyToday : []
+  })
+  const [sunTimes, setSunTimes] = useState(() => {
+    const cached = loadCache()
+    return cached?.sunTimes ?? null
+  })
   const [locationSource, setLocationSource] = useState(
     WEATHER_LOCATION_SOURCE.CONFIGURED,
   )
@@ -149,7 +157,10 @@ export function useWeather() {
         'daily',
         'weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset',
       )
-      url.searchParams.set('hourly', 'relative_humidity_2m')
+      url.searchParams.set(
+        'hourly',
+        'temperature_2m,weather_code,precipitation_probability,wind_speed_10m,relative_humidity_2m',
+      )
       url.searchParams.set('timezone', 'auto')
 
       const res = await fetch(url.toString())
@@ -165,12 +176,16 @@ export function useWeather() {
       setReverseGeocodeHit(Boolean(revHit))
       setWeather(normalized.weather)
       setSunMinutes(normalized.sunMinutes)
+      setSunTimes(normalized.sunTimes ?? null)
+      setHourlyToday(normalized.hourlyToday ?? [])
       setForecast7(normalized.forecast7 ?? [])
       setStatus('ready')
       saveCache({
         ts: Date.now(),
         weather: normalized.weather,
         sunMinutes: normalized.sunMinutes,
+        sunTimes: normalized.sunTimes ?? null,
+        hourlyToday: normalized.hourlyToday ?? [],
         forecast7: normalized.forecast7 ?? [],
       })
     }
@@ -330,6 +345,8 @@ export function useWeather() {
   return {
     weather,
     sunMinutes,
+    sunTimes,
+    hourlyToday,
     forecast7,
     locationSource,
     reverseGeocodeHit,

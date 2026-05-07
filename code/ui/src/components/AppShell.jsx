@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import '../styles/picoclaw.css'
 import { useClock } from '../hooks/useClock.js'
 import { useThemeMode } from '../hooks/useThemeMode.js'
@@ -30,7 +30,8 @@ import WeatherLocationSettings from './WeatherLocationSettings.jsx'
 
 export default function AppShell() {
   const now = useClock()
-  const { weather, sunMinutes, forecast7, status: weatherStatus } = useWeather()
+  const { weather, sunMinutes, sunTimes, hourlyToday, forecast7, status: weatherStatus } =
+    useWeather()
   const themeMode = useThemeMode(now, sunMinutes)
 
   const backendBase = getBackendBaseUrl()
@@ -39,6 +40,7 @@ export default function AppShell() {
   })
 
   const [phase, setPhase] = useState(UI_PHASE.IDLE)
+  const blockInputUntilRef = useRef(0)
 
   const backlightDimmed =
     phase === UI_PHASE.IDLE || phase === UI_PHASE.DEEP_IDLE
@@ -47,6 +49,12 @@ export default function AppShell() {
   const goIdle = useCallback(() => setPhase(UI_PHASE.IDLE), [])
   const goActive = useCallback(() => setPhase(UI_PHASE.ACTIVE), [])
   const goDeepIdle = useCallback(() => setPhase(UI_PHASE.DEEP_IDLE), [])
+
+  const wakeFromDeepIdle = useCallback(() => {
+    // Block the synthetic click/tap that can bubble into the next screen after waking.
+    blockInputUntilRef.current = Date.now() + 650
+    setPhase(UI_PHASE.IDLE)
+  }, [])
 
   useIdleTimeout({
     enabled: showsChrome(phase),
@@ -99,7 +107,21 @@ export default function AppShell() {
   const dockActiveId = dockActionForPhase(phase)
 
   return (
-    <div className={shellClass}>
+    <div
+      className={shellClass}
+      onPointerDownCapture={(e) => {
+        if (Date.now() < blockInputUntilRef.current) {
+          e.preventDefault()
+          e.stopPropagation()
+        }
+      }}
+      onClickCapture={(e) => {
+        if (Date.now() < blockInputUntilRef.current) {
+          e.preventDefault()
+          e.stopPropagation()
+        }
+      }}
+    >
       {showsChrome(phase) ? <TopBar now={now} /> : null}
       <div className="app-body">
         {phase === UI_PHASE.IDLE ? (
@@ -108,7 +130,9 @@ export default function AppShell() {
             health={health}
             weather={weather}
             forecast7={forecast7}
+            hourlyToday={hourlyToday}
             weatherStatus={weatherStatus}
+            sunTimes={sunTimes}
             themeMode={themeMode}
             onActivate={goActive}
           />
@@ -119,7 +143,7 @@ export default function AppShell() {
             now={now}
             weather={weather}
             weatherStatus={weatherStatus}
-            onWake={goIdle}
+            onWake={wakeFromDeepIdle}
           />
         ) : null}
 

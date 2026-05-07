@@ -17,6 +17,8 @@ function clamp01(x) {
  *   onClose: () => void,
  *   locationLabel: string,
  *   rows: Array<{ dayLabel: string, summary: string, condition: string, min: number | null, max: number | null, humidity?: number | null }>,
+ *   hourlyToday?: Array<{ time: string, hourLabel: string, condition: string, summary: string, temp: number | null, precipProb: number | null }>,
+ *   sunTimes?: { sunriseISO: string, sunsetISO: string } | null,
  *   status?: 'loading' | 'ready' | 'error',
  * }} props
  */
@@ -25,6 +27,8 @@ export default function WeatherForecastPanel({
   onClose,
   locationLabel,
   rows,
+  hourlyToday = [],
+  sunTimes = null,
   status = 'ready',
 }) {
   useEffect(() => {
@@ -48,6 +52,15 @@ export default function WeatherForecastPanel({
   const weekMax = validMaxs.length ? Math.max(...validMaxs) : null
   const span =
     weekMin != null && weekMax != null ? Math.max(1, weekMax - weekMin) : 1
+
+  const fmtSun = (iso) => {
+    if (!iso) return ''
+    const d = new Date(String(iso))
+    if (Number.isNaN(d.getTime())) return String(iso).slice(11, 16)
+    return d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
+  }
+  const sunrise = sunTimes?.sunriseISO ? fmtSun(sunTimes.sunriseISO) : ''
+  const sunset = sunTimes?.sunsetISO ? fmtSun(sunTimes.sunsetISO) : ''
 
   const body = (
     <div
@@ -77,6 +90,38 @@ export default function WeatherForecastPanel({
             Chiudi
           </button>
         </div>
+
+        {rows?.[0]?.dayLabel === 'Oggi' && (hourlyToday?.length || sunrise || sunset) ? (
+          <section className="weather-forecast-today" aria-label="Oggi">
+            <div className="weather-forecast-today__meta">
+              {sunrise ? <span>Alba {sunrise}</span> : null}
+              {sunset ? <span>Tramonto {sunset}</span> : null}
+            </div>
+            {hourlyToday?.length ? (
+              <div className="weather-forecast-hourly" role="list" aria-label="Previsioni orarie">
+                {hourlyToday.map((h) => (
+                  <article
+                    key={h.time}
+                    className={`weather-forecast-hour weather-forecast-hour--${h.condition}`}
+                    role="listitem"
+                  >
+                    <div className="weather-forecast-hour__t">{h.hourLabel}</div>
+                    <div className="weather-forecast-hour__icon" aria-hidden>
+                      <WeatherGlyph variant={h.condition} />
+                    </div>
+                    <div className="weather-forecast-hour__temp">
+                      {h.temp != null ? `${h.temp}°` : '—'}
+                    </div>
+                    <div className="weather-forecast-hour__prob">
+                      {h.precipProb != null ? `${h.precipProb}%` : ' '}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : null}
+          </section>
+        ) : null}
+
         <section className="weather-forecast-week" aria-label="Previsioni 7 giorni">
           {rows.length === 0 ? (
             <p className="weather-forecast-week__empty">

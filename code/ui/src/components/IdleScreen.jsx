@@ -23,7 +23,9 @@ export default function IdleScreen({
   health,
   weather,
   forecast7,
+  hourlyToday,
   weatherStatus,
+  sunTimes,
   themeMode,
   onActivate,
 }) {
@@ -112,6 +114,8 @@ export default function IdleScreen({
         onClose={closeForecast}
         locationLabel={weather.location}
         rows={forecast7}
+        hourlyToday={hourlyToday}
+        sunTimes={sunTimes}
         status={weatherStatus}
       />
     </>

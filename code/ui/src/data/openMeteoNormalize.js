@@ -5,6 +5,70 @@ import {
 import { getConfiguredWeatherLocationLabel } from '../config/runtime.js'
 
 /**
+ * @param {unknown} hourly
+ * @param {string} dayISO YYYY-MM-DD
+ * @returns {Array<{ time: string, hourLabel: string, condition: string, summary: string, temp: number | null, precipProb: number | null }>}
+ */
+export function buildHourlyToday(hourly, dayISO) {
+  if (!hourly || typeof hourly !== 'object') return []
+  const times = Array.isArray(hourly.time) ? hourly.time : null
+  if (!times) return []
+
+  const temps = Array.isArray(hourly.temperature_2m) ? hourly.temperature_2m : null
+  const codes = Array.isArray(hourly.weather_code) ? hourly.weather_code : null
+  const precs = Array.isArray(hourly.precipitation_probability)
+    ? hourly.precipitation_probability
+    : null
+  const winds = Array.isArray(hourly.wind_speed_10m) ? hourly.wind_speed_10m : null
+
+  const out = []
+  for (let i = 0; i < times.length; i += 1) {
+    const t = times[i]
+    if (typeof t !== 'string' || !t.startsWith(dayISO)) continue
+    const d = new Date(t)
+    const hourLabel = Number.isNaN(d.getTime())
+      ? t.slice(11, 16)
+      : d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
+
+    const tempRaw = temps?.[i]
+    const temp =
+      tempRaw != null && Number.isFinite(Number(tempRaw))
+        ? Math.round(Number(tempRaw))
+        : null
+
+    const probRaw = precs?.[i]
+    const precipProb =
+      probRaw != null && Number.isFinite(Number(probRaw))
+        ? Math.max(0, Math.min(100, Math.round(Number(probRaw))))
+        : null
+
+    const code = codes?.[i]
+    const wind = winds?.[i]
+    const ui = openMeteoCodeToUi(
+      code != null ? Number(code) : 0,
+      wind != null ? Number(wind) : 0,
+    )
+
+    out.push({
+      time: t,
+      hourLabel,
+      condition: ui.condition,
+      summary: ui.summary,
+      temp,
+      precipProb,
+    })
+  }
+
+  // Mostra da “adesso” in avanti (prossime ~12 ore), se abbiamo un clock coerente.
+  const now = Date.now()
+  const future = out.filter((x) => {
+    const dt = new Date(x.time).getTime()
+    return Number.isFinite(dt) ? dt >= now - 20 * 60 * 1000 : true
+  })
+  return (future.length ? future : out).slice(0, 12)
+}
+
+/**
  * @param {string} dateStr
  * @returns {Date}
  */
@@ -108,7 +172,7 @@ export function buildForecastRowsFromDaily(daily, hourly) {
 /**
  * @param {unknown} json risposta JSON forecast Open-Meteo
  * @param {{ locationLabel?: string }} [options]
- * @returns {{ weather: { summary: string, highLow: string, location: string, condition: string, temperatureNow: number | null }, sunMinutes: { sunriseMinutes: number, sunsetMinutes: number } | null, forecast7: Array<{ dayLabel: string, condition: string, summary: string, min: number | null, max: number | null, humidity: number | null, time: string }> } | null}
+ * @returns {{ weather: { summary: string, highLow: string, location: string, condition: string, temperatureNow: number | null }, sunMinutes: { sunriseMinutes: number, sunsetMinutes: number } | null, sunTimes: { sunriseISO: string, sunsetISO: string } | null, hourlyToday: Array<{ time: string, hourLabel: string, condition: string, summary: string, temp: number | null, precipProb: number | null }>, forecast7: Array<{ dayLabel: string, condition: string, summary: string, min: number | null, max: number | null, humidity: number | null, time: string }> } | null}
  */
 export function normalizeOpenMeteoForecast(json, options = {}) {
   if (!json || typeof json !== 'object') return null
@@ -159,6 +223,7 @@ export function normalizeOpenMeteoForecast(json, options = {}) {
   const sr = daily.sunrise?.[0]
   const ss = daily.sunset?.[0]
   let sunMinutes = null
+  let sunTimes = null
   if (sr != null && ss != null) {
     const sunriseMinutes = isoLocalToMinutesFromMidnight(String(sr))
     const sunsetMinutes = isoLocalToMinutesFromMidnight(String(ss))
@@ -168,10 +233,17 @@ export function normalizeOpenMeteoForecast(json, options = {}) {
       sunriseMinutes !== sunsetMinutes
     ) {
       sunMinutes = { sunriseMinutes, sunsetMinutes }
+      sunTimes = { sunriseISO: String(sr), sunsetISO: String(ss) }
     }
   }
 
+  const dayISO =
+    Array.isArray(daily.time) && daily.time[0] != null
+      ? String(daily.time[0])
+      : new Date().toISOString().slice(0, 10)
+  const hourlyToday = buildHourlyToday(hourly, dayISO)
+
   const forecast7 = buildForecastRowsFromDaily(daily, hourly)
 
-  return { weather, sunMinutes, forecast7 }
+  return { weather, sunMinutes, sunTimes, hourlyToday, forecast7 }
 }
