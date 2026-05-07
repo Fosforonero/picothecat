@@ -254,16 +254,8 @@ export function useWeather() {
     async function tick() {
       if (!cancelled) setStatus((s) => (s === 'ready' ? 'ready' : 'loading'))
 
-      // 1) Primario: prova subito geolocation browser (se abilitata).
-      // Se fallisce o è negata/indisponibile, fallback a coordinate configurate.
-      const geoOk = await tryBrowserGeolocationAndFetch()
-      if (geoOk) return
-
-      // 1b) Se non abbiamo GPS, prova a stimare la posizione da Internet (GeoIP).
-      const geoIpOk = await tryInternetGeoIpAndFetch()
-      if (geoIpOk) return
-
-      // 2) Fallback preferito: override manuale salvato localmente (per dispositivi senza GPS).
+      // 1) Se esiste un override manuale, deve avere precedenza assoluta:
+      // l'utente ha scelto una posizione fissa (Casa/Ufficio/Parenti) e non va sovrascritta da GeoIP/GPS.
       const ov = loadOverride()
       if (ov) {
         try {
@@ -280,6 +272,14 @@ export function useWeather() {
           // se fallisce, proseguiamo sul fallback configurato
         }
       }
+
+      // 2) Primario (solo se non c'è override): prova geolocation browser (se abilitata).
+      const geoOk = await tryBrowserGeolocationAndFetch()
+      if (geoOk) return
+
+      // 2b) Se non abbiamo GPS, prova a stimare la posizione da Internet (GeoIP).
+      const geoIpOk = await tryInternetGeoIpAndFetch()
+      if (geoIpOk) return
 
       // 3) Fallback: fetch su coordinate configurate.
       const cfg = getWeatherCoordinates()
