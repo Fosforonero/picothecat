@@ -23,6 +23,21 @@ const NAME_SUGGESTIONS = [
   'Casa Nonno',
 ]
 
+const PRESET_ADDRESSES = [
+  {
+    id: 'home',
+    label: 'Casa',
+    address: 'Via Collazia 20, 00183 Roma RM',
+    defaultName: 'Casa',
+  },
+  {
+    id: 'office',
+    label: 'Ufficio',
+    address: 'Via Giuseppe Gioachino Belli 28, 00193 Roma RM',
+    defaultName: 'Ufficio',
+  },
+]
+
 function safeJsonParse(str) {
   try {
     return JSON.parse(str)
@@ -126,6 +141,47 @@ export default function WeatherLocationSettings({ weather }) {
 
   const activeLabel = weather?.location ?? ''
 
+  const runAddressSearch = async (q) => {
+    setMsg('')
+    const query = String(q ?? '').trim()
+    if (!query) {
+      setAddrStatus('error')
+      setMsg('Inserisci un indirizzo.')
+      window.setTimeout(() => setAddrStatus('idle'), 1500)
+      return
+    }
+
+    setAddrStatus('loading')
+    try {
+      const hit = await geocodeAddressIt(query)
+      if (!hit) {
+        setAddrStatus('error')
+        setMsg('Indirizzo non trovato.')
+        window.setTimeout(() => setAddrStatus('idle'), 2000)
+        return
+      }
+      setLat(String(hit.lat))
+      setLon(String(hit.lon))
+      setLabel(hit.label)
+      setMsg(
+        'Indirizzo risolto. Premi “Salva” per applicarlo come override o “Salva in elenco”.',
+      )
+      window.setTimeout(() => setMsg(''), 3500)
+      setAddrStatus('idle')
+    } catch (e) {
+      setAddrStatus('error')
+      setMsg(
+        e?.message
+          ? `Errore ricerca indirizzo (${e.message}).`
+          : 'Errore ricerca indirizzo.',
+      )
+      window.setTimeout(() => {
+        setAddrStatus('idle')
+        setMsg('')
+      }, 3000)
+    }
+  }
+
   const onApplyPlace = (p) => {
     setLat(String(p.lat))
     setLon(String(p.lon))
@@ -184,40 +240,14 @@ export default function WeatherLocationSettings({ weather }) {
   }
 
   const onSearchAddress = async () => {
-    setMsg('')
-    const q = String(address ?? '').trim()
-    if (!q) {
-      setAddrStatus('error')
-      setMsg('Inserisci un indirizzo.')
-      window.setTimeout(() => setAddrStatus('idle'), 1500)
-      return
-    }
+    await runAddressSearch(address)
+  }
 
-    setAddrStatus('loading')
-    try {
-      const hit = await geocodeAddressIt(q)
-      if (!hit) {
-        setAddrStatus('error')
-        setMsg('Indirizzo non trovato.')
-        window.setTimeout(() => setAddrStatus('idle'), 2000)
-        return
-      }
-      setLat(String(hit.lat))
-      setLon(String(hit.lon))
-      setLabel(hit.label)
-      setMsg(
-        'Indirizzo risolto. Premi “Salva” per applicarlo come override o “Salva in elenco”.',
-      )
-      window.setTimeout(() => setMsg(''), 3500)
-      setAddrStatus('idle')
-    } catch (e) {
-      setAddrStatus('error')
-      setMsg(e?.message ? `Errore ricerca indirizzo (${e.message}).` : 'Errore ricerca indirizzo.')
-      window.setTimeout(() => {
-        setAddrStatus('idle')
-        setMsg('')
-      }, 3000)
-    }
+  const onUsePreset = async (preset) => {
+    const a = preset?.address ?? ''
+    setAddress(a)
+    if (preset?.defaultName) setPlaceName(preset.defaultName)
+    await runAddressSearch(a)
   }
 
   const onUseGps = async () => {
@@ -397,6 +427,17 @@ export default function WeatherLocationSettings({ weather }) {
               ))}
             </datalist>
           </label>
+          {PRESET_ADDRESSES.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              className="settings-btn settings-btn--ghost"
+              onClick={() => onUsePreset(p)}
+              disabled={addrStatus === 'loading'}
+            >
+              {p.label}
+            </button>
+          ))}
           <button
             type="button"
             className="settings-btn settings-btn--ghost"
