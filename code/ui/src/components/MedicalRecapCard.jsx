@@ -58,20 +58,19 @@ export default function MedicalRecapCard({
           <div className="medical-recap__k">BPM</div>
           <div className="medical-recap__v">{fmtInt(d.bpm)}</div>
         </div>
-        <div className="medical-recap__cell">
+        <div className="medical-recap__cell medical-recap__cell--wide">
           <div className="medical-recap__k">Sonno</div>
           <div className="medical-recap__v">{fmtSleep(d.sleepMinutes)}</div>
         </div>
-        <div className="medical-recap__cell">
+        <div className="medical-recap__cell medical-recap__cell--wide">
           <div className="medical-recap__k">Distanza</div>
           <div className="medical-recap__v">{fmtKm(d.distanceMeters)}</div>
         </div>
-        <div className="medical-recap__cell">
+        <div className="medical-recap__cell medical-recap__cell--wide">
           <div className="medical-recap__k">Calorie</div>
           <div className="medical-recap__v">{fmtInt(d.calories)}</div>
         </div>
       </div>
-      {d.unlock ? <div className="medical-recap__unlock">{d.unlock}</div> : null}
     </Root>
   )
 }

@@ -638,6 +638,9 @@ button.weather-card.weather-card--interactive {
   letter-spacing: 0.03em;
   font-size: 0.95rem;
   min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .medical-recap__v {
