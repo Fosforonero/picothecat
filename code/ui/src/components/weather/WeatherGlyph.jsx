@@ -5,6 +5,31 @@ import { useId } from 'react'
  * @param {{ variant: string }} props
  */
 
+const ASSET = {
+  sunny: new URL('../../assets/weather-amcharts/static/day.svg', import.meta.url)
+    .href,
+  clear_night: new URL(
+    '../../assets/weather-amcharts/static/night.svg',
+    import.meta.url,
+  ).href,
+  cloudy: new URL(
+    '../../assets/weather-amcharts/static/cloudy.svg',
+    import.meta.url,
+  ).href,
+  rainy: new URL(
+    '../../assets/weather-amcharts/static/rainy-6.svg',
+    import.meta.url,
+  ).href,
+  thunderstorm: new URL(
+    '../../assets/weather-amcharts/static/thunder.svg',
+    import.meta.url,
+  ).href,
+  snow: new URL(
+    '../../assets/weather-amcharts/static/snowy-6.svg',
+    import.meta.url,
+  ).href,
+}
+
 const CAP = 'round'
 const JOIN = 'round'
 const W = 3.2
@@ -150,18 +175,23 @@ const INNER = {
 }
 
 export default function WeatherGlyph({ variant }) {
+  const assetUrl = ASSET[variant]
   const Cmp = INNER[variant] ?? INNER.sunny
 
   return (
     <span className="weather-glyph" aria-hidden>
-      <svg
-        className="weather-glyph__svg"
-        viewBox="0 0 48 48"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <Cmp />
-      </svg>
+      {assetUrl ? (
+        <img className="weather-glyph__img" src={assetUrl} alt="" />
+      ) : (
+        <svg
+          className="weather-glyph__svg"
+          viewBox="0 0 48 48"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <Cmp />
+        </svg>
+      )}
     </span>
   )
 }

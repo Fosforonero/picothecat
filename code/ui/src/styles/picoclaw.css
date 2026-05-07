@@ -615,6 +615,13 @@ button.weather-card.weather-card--interactive {
   overflow: visible;
 }
 
+.weather-glyph__img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+
 .weather-card__label {
   position: relative;
   z-index: 2;
