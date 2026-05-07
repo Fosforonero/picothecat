@@ -50,6 +50,10 @@ export default function MedicalRecapCard({
       </div>
 
       <div className="medical-recap__grid">
+        <div className="medical-recap__cell medical-recap__cell--wide">
+          <div className="medical-recap__k">Passi</div>
+          <div className="medical-recap__v">{fmtInt(d.steps)}</div>
+        </div>
         <div className="medical-recap__cell">
           <div className="medical-recap__k">BPM</div>
           <div className="medical-recap__v">{fmtInt(d.bpm)}</div>

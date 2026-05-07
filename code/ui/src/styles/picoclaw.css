@@ -616,6 +616,10 @@ button.weather-card.weather-card--interactive {
   min-width: 0;
 }
 
+.medical-recap__cell--wide {
+  grid-column: 1 / -1;
+}
+
 .medical-recap__k {
   color: var(--text-muted);
   font-weight: 700;
@@ -1615,6 +1619,10 @@ html[data-theme='dark'] .indoor-climate-card--mode-dehumid {
   gap: clamp(12px, 2vw, 18px);
   min-height: 0;
   overflow: hidden;
+}
+
+.medical-screen__wide {
+  grid-column: 1 / -1;
 }
 
 @media (orientation: portrait), (max-width: 900px) {

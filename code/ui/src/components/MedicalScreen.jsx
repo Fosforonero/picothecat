@@ -40,6 +40,11 @@ function Sparkline({ points, stroke = 'currentColor' }) {
   )
 }
 
+function fmtSteps(v) {
+  const n = Number(v)
+  return Number.isFinite(n) ? Math.round(n).toLocaleString('it-IT') : '—'
+}
+
 function fmtKm(meters) {
   const n = Number(meters)
   if (!Number.isFinite(n)) return '—'
@@ -76,6 +81,15 @@ export default function MedicalScreen({ medical }) {
             : ''}
       </p>
       <div className="medical-screen__grid">
+        <div className="medical-screen__wide">
+          <StatusCard
+            title="Passi"
+            value={d ? fmtSteps(d.steps) : '—'}
+            detail={
+              status === 'ready' ? <Sparkline points={series('steps')} stroke="rgba(96,165,250,0.95)" /> : ''
+            }
+          />
+        </div>
         <StatusCard
           title="Frequenza cardiaca"
           value={d ? fmt(d.bpm) : '—'}
