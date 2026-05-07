@@ -131,7 +131,7 @@
   position: relative;
   z-index: 2;
   font-size: clamp(8.5rem, 46vw, 26rem);
-  font-weight: 520;
+  font-weight: 680;
   line-height: 0.92;
   letter-spacing: 0.04em;
   font-variant-numeric: tabular-nums;
