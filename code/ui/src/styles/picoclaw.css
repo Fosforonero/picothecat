@@ -617,6 +617,13 @@ button.weather-card.weather-card--interactive {
   font-variant-numeric: tabular-nums;
 }
 
+.medical-recap__unlock {
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-weight: 750;
+  letter-spacing: 0.01em;
+}
+
 /* Velatura sopra il glifo: integra l’icona nello sfondo e sostiene la lettura del testo */
 .weather-card__glyph-overlay {
   position: absolute;

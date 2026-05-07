@@ -16,6 +16,7 @@ export default function IdleScreen({
   sunTimes,
   themeMode,
   onActivate,
+  medical,
 }) {
   const [forecastOpen, setForecastOpen] = useState(false)
   const openForecast = useCallback(() => setForecastOpen(true), [])
@@ -81,7 +82,7 @@ export default function IdleScreen({
               mode={climateMock.mode}
             />
             <IdleHomeCard />
-            <MedicalRecapCard />
+            <MedicalRecapCard medical={medical?.data ?? null} status={medical?.status ?? 'loading'} />
           </div>
         </div>
 

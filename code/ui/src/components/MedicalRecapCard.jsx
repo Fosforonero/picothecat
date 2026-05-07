@@ -1,5 +1,3 @@
-import { medicalMock } from '../data/medicalMock.js'
-
 function fmtInt(v) {
   const n = Number(v)
   return Number.isFinite(n) ? Math.round(n).toLocaleString('it-IT') : '—'
@@ -10,14 +8,16 @@ function fmtTempC(v) {
   return Number.isFinite(n) ? `${n.toFixed(1).replace('.', ',')}°C` : '—'
 }
 
-export default function MedicalRecapCard() {
-  const d = medicalMock
+export default function MedicalRecapCard({ medical, status = 'ready' }) {
+  const d = medical ?? {}
 
   return (
     <article className="medical-recap" aria-label="Riepilogo salute">
       <div className="medical-recap__head">
         <div className="medical-recap__title">Salute</div>
-        <div className="medical-recap__hint">Oggi</div>
+        <div className="medical-recap__hint">
+          {status === 'loading' ? '…' : status === 'error' ? 'offline' : 'Oggi'}
+        </div>
       </div>
 
       <div className="medical-recap__grid">
@@ -38,6 +38,7 @@ export default function MedicalRecapCard() {
           <div className="medical-recap__v">{fmtTempC(d.bodyTempC)}</div>
         </div>
       </div>
+      {d.unlock ? <div className="medical-recap__unlock">{d.unlock}</div> : null}
     </article>
   )
 }

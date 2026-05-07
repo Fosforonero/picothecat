@@ -27,6 +27,7 @@ import VoiceModeScreen from './VoiceModeScreen.jsx'
 import ModePlaceholderScreen from './ModePlaceholderScreen.jsx'
 import MedicalScreen from './MedicalScreen.jsx'
 import WeatherLocationSettings from './WeatherLocationSettings.jsx'
+import { useMedical } from '../hooks/useMedical.js'
 
 export default function AppShell() {
   const now = useClock()
@@ -38,6 +39,7 @@ export default function AppShell() {
   const health = useHealth(backendBase, {
     intervalMs: HEALTH_POLL_INTERVAL_MS,
   })
+  const medical = useMedical(backendBase)
 
   const [phase, setPhase] = useState(UI_PHASE.IDLE)
   const blockInputUntilRef = useRef(0)
@@ -135,6 +137,7 @@ export default function AppShell() {
             sunTimes={sunTimes}
             themeMode={themeMode}
             onActivate={goActive}
+            medical={medical}
           />
         ) : null}
 
@@ -157,7 +160,7 @@ export default function AppShell() {
 
         {phase === UI_PHASE.VOICE ? <VoiceModeScreen /> : null}
 
-        {phase === UI_PHASE.MEDICAL ? <MedicalScreen /> : null}
+        {phase === UI_PHASE.MEDICAL ? <MedicalScreen medical={medical} /> : null}
 
         {phase === UI_PHASE.SETTINGS ? (
           <WeatherLocationSettings weather={weather} />
