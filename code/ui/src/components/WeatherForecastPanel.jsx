@@ -1,0 +1,162 @@
+import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
+import WeatherGlyph from './weather/WeatherGlyph.jsx'
+import HumidityDrop from './weather/HumidityDrop.jsx'
+
+function clamp01(x) {
+  if (!Number.isFinite(x)) return 0
+  if (x < 0) return 0
+  if (x > 1) return 1
+  return x
+}
+
+/**
+ * Pannello previsioni 7 giorni (portal su body: fuori dal filtro comfort idle).
+ * @param {{
+ *   open: boolean,
+ *   onClose: () => void,
+ *   locationLabel: string,
+ *   rows: Array<{ dayLabel: string, summary: string, condition: string, min: number | null, max: number | null, humidity?: number | null }>,
+ *   status?: 'loading' | 'ready' | 'error',
+ * }} props
+ */
+export default function WeatherForecastPanel({
+  open,
+  onClose,
+  locationLabel,
+  rows,
+  status = 'ready',
+}) {
+  useEffect(() => {
+    if (!open) return undefined
+    const onKey = (e) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open, onClose])
+
+  if (!open) return null
+
+  const validMins = rows
+    .map((r) => (r.min != null ? Number(r.min) : NaN))
+    .filter((v) => Number.isFinite(v))
+  const validMaxs = rows
+    .map((r) => (r.max != null ? Number(r.max) : NaN))
+    .filter((v) => Number.isFinite(v))
+  const weekMin = validMins.length ? Math.min(...validMins) : null
+  const weekMax = validMaxs.length ? Math.max(...validMaxs) : null
+  const span =
+    weekMin != null && weekMax != null ? Math.max(1, weekMax - weekMin) : 1
+
+  const body = (
+    <div
+      className="weather-forecast-root"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="weather-forecast-title"
+    >
+      <button
+        type="button"
+        className="weather-forecast-backdrop"
+        onClick={onClose}
+        aria-label="Chiudi previsioni"
+      />
+      <div className="weather-forecast-sheet">
+        <div className="weather-forecast-sheet__head">
+          <h2 id="weather-forecast-title" className="weather-forecast-sheet__title">
+            Previsioni
+          </h2>
+          <p className="weather-forecast-sheet__sub">{locationLabel}</p>
+          <button
+            type="button"
+            className="weather-forecast-sheet__close"
+            onClick={onClose}
+            aria-label="Chiudi"
+          >
+            Chiudi
+          </button>
+        </div>
+        <section className="weather-forecast-week" aria-label="Previsioni 7 giorni">
+          {rows.length === 0 ? (
+            <p className="weather-forecast-week__empty">
+              {status === 'loading'
+                ? 'Caricamento previsioni…'
+                : status === 'error'
+                  ? 'Meteo non disponibile (verifica rete / permessi).'
+                  : 'Dati previsione non disponibili.'}
+            </p>
+          ) : (
+            <div className="weather-forecast-vlist" role="list">
+              {rows.map((row, idx) => {
+                const min = row.min != null ? Number(row.min) : null
+                const max = row.max != null ? Number(row.max) : null
+                const humidity =
+                  row.humidity != null && Number.isFinite(Number(row.humidity))
+                    ? Math.round(Number(row.humidity))
+                    : null
+                const hasRange =
+                  min != null &&
+                  max != null &&
+                  Number.isFinite(min) &&
+                  Number.isFinite(max)
+                const start =
+                  hasRange && weekMin != null ? clamp01((min - weekMin) / span) : 0
+                const width =
+                  hasRange && weekMin != null ? clamp01((max - min) / span) : 0
+
+                return (
+                  <article
+                    key={row.time ? `${row.time}-${idx}` : `f-${idx}`}
+                    className={`weather-forecast-rowcard weather-forecast-rowcard--${row.condition}`}
+                    role="listitem"
+                  >
+                    <div className="weather-forecast-rowcard__left">
+                      <p className="weather-forecast-rowcard__day">{row.dayLabel}</p>
+                      <div className="weather-forecast-rowcard__icon" aria-hidden>
+                        <WeatherGlyph variant={row.condition} />
+                      </div>
+                    </div>
+                    <div className="weather-forecast-rowcard__mid">
+                      <p className="weather-forecast-rowcard__cond">{row.summary}</p>
+                      <p className="weather-forecast-rowcard__meta">
+                        {humidity != null ? (
+                          <>
+                            <HumidityDrop className="weather-forecast-rowcard__drop" />{' '}
+                            <span className="weather-forecast-rowcard__humidity">
+                              {humidity}%
+                            </span>
+                          </>
+                        ) : (
+                          ' '
+                        )}
+                      </p>
+                    </div>
+                    <div className="weather-forecast-rowcard__temps">
+                      <span className="weather-forecast-rowcard__min">
+                        {min != null && Number.isFinite(min) ? `${Math.round(min)}°` : '—'}
+                      </span>
+                      <div
+                        className="weather-forecast-rowcard__range"
+                        aria-hidden
+                        style={{
+                          '--start': String(start),
+                          '--span': String(width),
+                        }}
+                      />
+                      <span className="weather-forecast-rowcard__max">
+                        {max != null && Number.isFinite(max) ? `${Math.round(max)}°` : '—'}
+                      </span>
+                    </div>
+                  </article>
+                )
+              })}
+            </div>
+          )}
+        </section>
+      </div>
+    </div>
+  )
+
+  return createPortal(body, document.body)
+}
