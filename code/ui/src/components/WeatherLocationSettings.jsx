@@ -3,6 +3,11 @@ import {
   getWeatherCoordinates,
   getConfiguredWeatherLocationLabel,
 } from '../config/runtime.js'
+import {
+  isBrowserGeolocationUsable,
+  requestBrowserCoordinates,
+  reverseGeocodeLocalityIt,
+} from '../data/weatherLocation.js'
 
 const OVERRIDE_KEY = 'picoclaw.weather.override.v1'
 
@@ -57,6 +62,7 @@ export default function WeatherLocationSettings({ weather }) {
     override?.label ? override.label : configuredLabel,
   )
   const [msg, setMsg] = useState('')
+  const [gpsStatus, setGpsStatus] = useState('idle') // 'idle' | 'loading' | 'error'
 
   useEffect(() => {
     const onStorage = () => setOverrideState(loadOverride())
@@ -69,6 +75,47 @@ export default function WeatherLocationSettings({ weather }) {
   }, [])
 
   const activeLabel = weather?.location ?? ''
+
+  const onUseGps = async () => {
+    setMsg('')
+    if (!isBrowserGeolocationUsable()) {
+      setGpsStatus('error')
+      setMsg(
+        'GPS non disponibile in questo contesto. Apri l’UI su https o su http://localhost.',
+      )
+      window.setTimeout(() => setGpsStatus('idle'), 2000)
+      return
+    }
+
+    setGpsStatus('loading')
+    try {
+      const { lat: latN, lon: lonN } = await requestBrowserCoordinates()
+      setLat(String(latN))
+      setLon(String(lonN))
+
+      const name = await reverseGeocodeLocalityIt(latN, lonN)
+      if (name && String(name).trim() !== '') {
+        setLabel(String(name).trim())
+      }
+
+      setMsg('Posizione aggiornata. Premi “Salva” per applicarla come override.')
+      window.setTimeout(() => setMsg(''), 3500)
+      setGpsStatus('idle')
+    } catch (e) {
+      setGpsStatus('error')
+      const message =
+        e?.code === 1
+          ? 'Permesso GPS negato.'
+          : e?.message
+            ? `GPS non disponibile (${e.message}).`
+            : 'GPS non disponibile.'
+      setMsg(message)
+      window.setTimeout(() => {
+        setGpsStatus('idle')
+        setMsg('')
+      }, 3000)
+    }
+  }
 
   const onSave = () => {
     const latN = Number(lat)
@@ -140,6 +187,14 @@ export default function WeatherLocationSettings({ weather }) {
         </div>
 
         <div className="settings-actions">
+          <button
+            type="button"
+            className="settings-btn settings-btn--ghost"
+            onClick={onUseGps}
+            disabled={gpsStatus === 'loading'}
+          >
+            {gpsStatus === 'loading' ? 'GPS…' : 'Usa posizione attuale (GPS)'}
+          </button>
           <button type="button" className="settings-btn" onClick={onSave}>
             Salva
           </button>
