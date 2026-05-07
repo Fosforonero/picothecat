@@ -125,7 +125,12 @@ export function useMedical(baseUrl, { intervalMs = 20000 } = {}) {
   useEffect(() => {
     let alive = true
     const controller = new AbortController()
-    const base = baseUrl === '' ? '' : baseUrl.replace(/\/$/, '')
+    const base =
+      baseUrl === ''
+        ? import.meta.env?.DEV
+          ? ''
+          : 'http://127.0.0.1:8787'
+        : baseUrl.replace(/\/$/, '')
     const candidates = [
       base ? `${base}/api/medical` : null,
       base ? `${base}/api/medical/latest` : null,
