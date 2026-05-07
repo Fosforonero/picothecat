@@ -124,13 +124,17 @@ export function formatGeoIpLabel(geo) {
 export async function geocodeAddressIt(query) {
   const q = String(query ?? '').trim()
   if (!q) return null
+  const lang =
+    typeof navigator !== 'undefined' && navigator.language
+      ? String(navigator.language).slice(0, 2)
+      : 'en'
 
   // 1) Open‑Meteo Geocoding (ottimo per città/località, meno affidabile per indirizzi civici completi)
   try {
     const u = new URL('https://geocoding-api.open-meteo.com/v1/search')
     u.searchParams.set('name', q)
     u.searchParams.set('count', '1')
-    u.searchParams.set('language', 'it')
+    u.searchParams.set('language', lang)
     u.searchParams.set('format', 'json')
 
     const res = await fetch(u.toString())
@@ -159,7 +163,7 @@ export async function geocodeAddressIt(query) {
     u.searchParams.set('format', 'json')
     u.searchParams.set('limit', '1')
     u.searchParams.set('addressdetails', '1')
-    u.searchParams.set('accept-language', 'it')
+    u.searchParams.set('accept-language', lang)
 
     const res = await fetch(u.toString(), {
       headers: {
