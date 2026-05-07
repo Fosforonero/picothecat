@@ -117,6 +117,35 @@ export function formatGeoIpLabel(geo) {
 }
 
 /**
+ * Forward geocoding: indirizzo → coordinate. Basato su Open‑Meteo Geocoding API.
+ * @param {string} query
+ * @returns {Promise<{ lat: number, lon: number, label: string } | null>}
+ */
+export async function geocodeAddressIt(query) {
+  const q = String(query ?? '').trim()
+  if (!q) return null
+  const u = new URL('https://geocoding-api.open-meteo.com/v1/search')
+  u.searchParams.set('name', q)
+  u.searchParams.set('count', '1')
+  u.searchParams.set('language', 'it')
+  u.searchParams.set('format', 'json')
+
+  const res = await fetch(u.toString())
+  if (!res.ok) throw new Error(`geocode http ${res.status}`)
+  const j = await res.json()
+  const r = Array.isArray(j?.results) ? j.results[0] : null
+  const lat = Number(r?.latitude)
+  const lon = Number(r?.longitude)
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null
+
+  const name = r?.name != null ? String(r.name).trim() : ''
+  const admin1 = r?.admin1 != null ? String(r.admin1).trim() : ''
+  const country = r?.country != null ? String(r.country).trim() : ''
+  const label = [name, admin1, country].filter(Boolean).join(', ') || q
+  return { lat, lon, label }
+}
+
+/**
  * Etichetta città da coordinate live (servizio pubblico, limiti di rate).
  * @param {number} lat
  * @param {number} lon

@@ -6,6 +6,7 @@ import {
 import {
   isBrowserGeolocationUsable,
   requestBrowserCoordinates,
+  geocodeAddressIt,
   reverseGeocodeLocalityIt,
 } from '../data/weatherLocation.js'
 
@@ -61,8 +62,10 @@ export default function WeatherLocationSettings({ weather }) {
   const [label, setLabel] = useState(() =>
     override?.label ? override.label : configuredLabel,
   )
+  const [address, setAddress] = useState('')
   const [msg, setMsg] = useState('')
   const [gpsStatus, setGpsStatus] = useState('idle') // 'idle' | 'loading' | 'error'
+  const [addrStatus, setAddrStatus] = useState('idle') // 'idle' | 'loading' | 'error'
 
   useEffect(() => {
     const onStorage = () => setOverrideState(loadOverride())
@@ -75,6 +78,41 @@ export default function WeatherLocationSettings({ weather }) {
   }, [])
 
   const activeLabel = weather?.location ?? ''
+
+  const onSearchAddress = async () => {
+    setMsg('')
+    const q = String(address ?? '').trim()
+    if (!q) {
+      setAddrStatus('error')
+      setMsg('Inserisci un indirizzo.')
+      window.setTimeout(() => setAddrStatus('idle'), 1500)
+      return
+    }
+
+    setAddrStatus('loading')
+    try {
+      const hit = await geocodeAddressIt(q)
+      if (!hit) {
+        setAddrStatus('error')
+        setMsg('Indirizzo non trovato.')
+        window.setTimeout(() => setAddrStatus('idle'), 2000)
+        return
+      }
+      setLat(String(hit.lat))
+      setLon(String(hit.lon))
+      setLabel(hit.label)
+      setMsg('Indirizzo risolto. Premi “Salva” per applicarlo come override.')
+      window.setTimeout(() => setMsg(''), 3500)
+      setAddrStatus('idle')
+    } catch (e) {
+      setAddrStatus('error')
+      setMsg(e?.message ? `Errore ricerca indirizzo (${e.message}).` : 'Errore ricerca indirizzo.')
+      window.setTimeout(() => {
+        setAddrStatus('idle')
+        setMsg('')
+      }, 3000)
+    }
+  }
 
   const onUseGps = async () => {
     setMsg('')
@@ -155,6 +193,16 @@ export default function WeatherLocationSettings({ weather }) {
         </div>
 
         <div className="settings-grid">
+          <label className="settings-field settings-field--wide">
+            <span className="settings-field__label">Indirizzo</span>
+            <input
+              className="settings-field__input"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="Es. Via Collazia 20, 00183 Roma"
+              aria-label="Indirizzo"
+            />
+          </label>
           <label className="settings-field">
             <span className="settings-field__label">Latitudine</span>
             <input
@@ -187,6 +235,14 @@ export default function WeatherLocationSettings({ weather }) {
         </div>
 
         <div className="settings-actions">
+          <button
+            type="button"
+            className="settings-btn settings-btn--ghost"
+            onClick={onSearchAddress}
+            disabled={addrStatus === 'loading'}
+          >
+            {addrStatus === 'loading' ? 'Cerca…' : 'Cerca indirizzo'}
+          </button>
           <button
             type="button"
             className="settings-btn settings-btn--ghost"
