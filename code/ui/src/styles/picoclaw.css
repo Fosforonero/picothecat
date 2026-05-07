@@ -1420,11 +1420,24 @@ html[data-theme='dark'] .indoor-climate-card--mode-dehumid {
   border-radius: var(--radius-md);
   border: 1px solid var(--border-soft);
   background: var(--bg-elevated);
-  color: var(--text-muted);
+  color: var(--text);
   font-size: clamp(0.98rem, 2vw, 1.08rem);
   padding: 0 16px;
-  display: flex;
-  align-items: center;
+}
+
+.assistant-main__send {
+  min-height: 52px;
+  padding: 0 18px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-soft);
+  background: var(--bg-elevated);
+  color: var(--text);
+  font-weight: 800;
+  cursor: none;
+}
+
+.assistant-main__send:disabled {
+  opacity: 0.55;
 }
 
 /* —— Voce: placeholder minimale —— */
@@ -1546,6 +1559,7 @@ html[data-theme='dark'] .indoor-climate-card--mode-dehumid {
   flex-direction: column;
   gap: 12px;
   padding: clamp(14px, 3.2vw, 28px);
+  overflow-y: auto;
 }
 
 .settings-card {
@@ -1944,7 +1958,7 @@ select.settings-field__input {
 .weather-forecast-todaycard__strip {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: minmax(92px, 1fr);
+  grid-auto-columns: minmax(104px, 1fr);
   gap: 12px;
   overflow-x: auto;
   padding-bottom: 10px;
@@ -1957,12 +1971,12 @@ select.settings-field__input {
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-soft);
   background: color-mix(in srgb, var(--bg-elevated) 68%, transparent);
-  padding: 12px 12px 10px;
+  padding: 14px 12px 12px;
   display: grid;
   grid-template-rows: auto 1fr auto auto;
   gap: 6px;
   text-align: center;
-  min-height: 140px;
+  min-height: 162px;
 }
 
 .weather-forecast-hour__t {
@@ -1972,8 +1986,8 @@ select.settings-field__input {
 }
 
 .weather-forecast-hour__icon .weather-glyph {
-  width: 56px;
-  height: 56px;
+  width: 68px;
+  height: 68px;
   margin: 0 auto;
 }
 

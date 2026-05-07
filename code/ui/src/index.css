@@ -57,6 +57,15 @@ body,
   cursor: none !important;
 }
 
+/* Hide scrollbars (kiosk) */
+* {
+  scrollbar-width: none;
+}
+*::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+}
+
 button,
 [role='button'],
 summary {

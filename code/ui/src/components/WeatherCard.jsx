@@ -55,7 +55,13 @@ export default function WeatherCard({
             <span className="weather-card__summary-text">{weather.summary}</span>
           </div>
           <div className="weather-card__meta">
-            {weather.highLow} · {weather.location}
+            {weather.highLow} ·{' '}
+            {String(weather.location || '')
+              .split(',')
+              .map((s) => s.trim())
+              .filter(Boolean)
+              .slice(0, 2)
+              .join(', ')}
           </div>
         </div>
       </div>
