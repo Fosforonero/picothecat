@@ -10,6 +10,8 @@ import {
   WEATHER_LOCATION_SOURCE,
   shouldUseBrowserGeolocation,
   requestBrowserCoordinates,
+  requestInternetGeoIpCoordinates,
+  formatGeoIpLabel,
   reverseGeocodeLocalityIt,
 } from '../data/weatherLocation.js'
 
@@ -211,6 +213,43 @@ export function useWeather() {
       }
     }
 
+    async function tryInternetGeoIpAndFetch() {
+      if (!shouldUseBrowserGeolocation()) return false
+      devLog('trying internet geoip')
+      try {
+        const geo = await Promise.race([
+          requestInternetGeoIpCoordinates(),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('geoip timeout')), 4500),
+          ),
+        ])
+
+        // Label: prima da GeoIP (città/regione), poi se possibile la rendiamo più “locale” via reverse geocode.
+        let locationLabel = formatGeoIpLabel(geo)
+        try {
+          const name = await reverseGeocodeLocalityIt(geo.lat, geo.lon)
+          if (name) locationLabel = name
+        } catch {
+          // ignore
+        }
+
+        await fetchForecast({
+          lat: geo.lat,
+          lon: geo.lon,
+          locationLabel,
+          source: WEATHER_LOCATION_SOURCE.INTERNET_GEOIP,
+          revHit: false,
+        })
+        return true
+      } catch (e) {
+        devLog('internet geoip failed → fallback', {
+          name: e?.name,
+          message: e?.message,
+        })
+        return false
+      }
+    }
+
     async function tick() {
       if (!cancelled) setStatus((s) => (s === 'ready' ? 'ready' : 'loading'))
 
@@ -218,6 +257,10 @@ export function useWeather() {
       // Se fallisce o è negata/indisponibile, fallback a coordinate configurate.
       const geoOk = await tryBrowserGeolocationAndFetch()
       if (geoOk) return
+
+      // 1b) Se non abbiamo GPS, prova a stimare la posizione da Internet (GeoIP).
+      const geoIpOk = await tryInternetGeoIpAndFetch()
+      if (geoIpOk) return
 
       // 2) Fallback preferito: override manuale salvato localmente (per dispositivi senza GPS).
       const ov = loadOverride()

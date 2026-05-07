@@ -12,6 +12,8 @@ import {
 export const WEATHER_LOCATION_SOURCE = Object.freeze({
   /** GPS + (se possibile) reverse geocoding sulla posizione live */
   LIVE_GEOLOCATION: 'live_geolocation',
+  /** GeoIP (da internet) — quando il GPS non è disponibile */
+  INTERNET_GEOIP: 'internet_geoip',
   /** `VITE_WEATHER_LAT` / `LON` + `VITE_WEATHER_LABEL` o etichetta neutra */
   CONFIGURED: 'configured',
 })
@@ -61,6 +63,47 @@ export function requestBrowserCoordinates() {
       },
     )
   })
+}
+
+/**
+ * Coordinate da internet (GeoIP). Precisione tipica: città/quartiere grossolano.
+ * Non richiede chiave.
+ *
+ * @returns {Promise<{ lat: number, lon: number, city?: string, region?: string, country?: string }>}
+ */
+export async function requestInternetGeoIpCoordinates() {
+  // ipwho.is è un endpoint pubblico senza chiave, con CORS.
+  // Ritorna lat/lon + città/regione.
+  const res = await fetch('https://ipwho.is/')
+  if (!res.ok) throw new Error(`geoip http ${res.status}`)
+  const j = await res.json()
+  if (!j || j.success === false) throw new Error('geoip failed')
+  const lat = Number(j.latitude)
+  const lon = Number(j.longitude)
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) throw new Error('geoip invalid')
+  return {
+    lat,
+    lon,
+    city: j.city != null ? String(j.city).trim() : '',
+    region: j.region != null ? String(j.region).trim() : '',
+    country: j.country != null ? String(j.country).trim() : '',
+  }
+}
+
+/**
+ * Costruisce una label umana dalla risposta GeoIP.
+ * @param {{ city?: string, region?: string, country?: string }} geo
+ * @returns {string}
+ */
+export function formatGeoIpLabel(geo) {
+  const city = geo?.city ? String(geo.city).trim() : ''
+  const region = geo?.region ? String(geo.region).trim() : ''
+  const country = geo?.country ? String(geo.country).trim() : ''
+  if (city && region && city.toLowerCase() !== region.toLowerCase())
+    return `${city}, ${region}`
+  if (city) return city
+  if (region) return region
+  return country || 'Posizione (internet)'
 }
 
 /**
