@@ -103,9 +103,23 @@ export function useMedical(baseUrl, { intervalMs = 20000 } = {}) {
     const cached = loadCache()
     const history = loadHistory()
     if (cached?.data) {
-      return { status: 'ready', data: cached.data, lastError: null, history }
+      return {
+        status: 'ready',
+        data: cached.data,
+        lastError: null,
+        history,
+        lastUrl: null,
+        lastHttpStatus: null,
+      }
     }
-    return { status: 'loading', data: null, lastError: null, history }
+    return {
+      status: 'loading',
+      data: null,
+      lastError: null,
+      history,
+      lastUrl: null,
+      lastHttpStatus: null,
+    }
   })
 
   useEffect(() => {
@@ -126,12 +140,16 @@ export function useMedical(baseUrl, { intervalMs = 20000 } = {}) {
         /** @type {any} */
         let json = null
         let lastHttpErr = null
+        let lastUrl = null
+        let lastHttpStatus = null
         for (const url of candidates) {
           try {
             const res = await fetch(url, {
               signal: controller.signal,
               cache: 'no-store',
             })
+            lastUrl = url
+            lastHttpStatus = res.status
             if (!res.ok) {
               lastHttpErr = `HTTP ${res.status}`
               continue
@@ -140,6 +158,8 @@ export function useMedical(baseUrl, { intervalMs = 20000 } = {}) {
             break
           } catch (e) {
             // Network/CORS error: try next candidate.
+            lastUrl = url
+            lastHttpStatus = null
             lastHttpErr = e?.message ?? 'Failed to fetch'
           }
         }
@@ -162,7 +182,14 @@ export function useMedical(baseUrl, { intervalMs = 20000 } = {}) {
             },
           ].slice(-HISTORY_MAX)
           saveHistory(nextHistory)
-          return { status: 'ready', data, lastError: null, history: nextHistory }
+          return {
+            status: 'ready',
+            data,
+            lastError: null,
+            history: nextHistory,
+            lastUrl,
+            lastHttpStatus,
+          }
         })
         saveCache({ ts: Date.now(), data })
       } catch (e) {

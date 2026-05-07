@@ -86,7 +86,12 @@ export default function IdleScreen({
             <MedicalRecapCard
               medical={medical?.data ?? null}
               status={medical?.status ?? 'loading'}
-              lastError={medical?.lastError ?? null}
+              lastError={
+                medical?.lastError ??
+                (medical?.lastUrl
+                  ? `${medical.lastUrl}${medical.lastHttpStatus ? ` (HTTP ${medical.lastHttpStatus})` : ''}`
+                  : null)
+              }
               onClick={onOpenMedical}
             />
           </div>
