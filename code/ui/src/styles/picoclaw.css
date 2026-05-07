@@ -637,12 +637,15 @@ button.weather-card.weather-card--interactive {
   font-weight: 700;
   letter-spacing: 0.03em;
   font-size: 0.95rem;
+  min-width: 0;
 }
 
 .medical-recap__v {
   color: var(--text);
   font-weight: 850;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .medical-recap__cell--hero .medical-recap__k {
