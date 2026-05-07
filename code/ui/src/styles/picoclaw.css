@@ -551,7 +551,70 @@ button.weather-card.weather-card--interactive {
   opacity: 1;
   margin: 0;
   margin-right: -6%;
-  transform: translate(4%, -12%) scale(1.12);
+  transform: translate(4%, -15%) scale(1.12);
+}
+
+/* —— Medical recap (idle) —— */
+.medical-recap {
+  border-radius: var(--radius-xl);
+  background: color-mix(in srgb, var(--surface) 68%, var(--bg));
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-soft);
+  padding: clamp(16px, 2.6vw, 22px);
+  min-height: clamp(118px, 14dvh, 188px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.medical-recap__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.medical-recap__title {
+  font-weight: 750;
+  letter-spacing: 0.02em;
+  color: var(--text);
+}
+
+.medical-recap__hint {
+  color: var(--text-muted);
+  font-weight: 650;
+}
+
+.medical-recap__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 12px;
+  margin-top: auto;
+}
+
+.medical-recap__cell {
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--bg-elevated) 70%, transparent);
+  border: 1px solid var(--border-soft);
+  padding: 10px 12px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.medical-recap__k {
+  color: var(--text-muted);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  font-size: 0.95rem;
+}
+
+.medical-recap__v {
+  color: var(--text);
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Velatura sopra il glifo: integra l’icona nello sfondo e sostiene la lettura del testo */

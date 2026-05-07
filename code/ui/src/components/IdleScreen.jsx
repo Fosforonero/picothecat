@@ -1,22 +1,10 @@
 import { useCallback, useState } from 'react'
-import StatusCard from './StatusCard.jsx'
 import WeatherCard from './WeatherCard.jsx'
 import WeatherForecastPanel from './WeatherForecastPanel.jsx'
 import IndoorClimateCard from './IndoorClimateCard.jsx'
 import IdleHomeCard from './IdleHomeCard.jsx'
+import MedicalRecapCard from './MedicalRecapCard.jsx'
 import { climateMock } from '../data/climateMock.js'
-
-function assistantLine(status) {
-  if (status === 'online') return 'Pronto'
-  if (status === 'offline') return 'Non raggiungibile'
-  return 'Connessione…'
-}
-
-function assistantDetail(status, lastError) {
-  if (status === 'offline' && lastError) return lastError
-  if (status === 'online') return 'Tutto regolare'
-  return 'Verifica in corso'
-}
 
 export default function IdleScreen({
   now,
@@ -93,20 +81,12 @@ export default function IdleScreen({
               mode={climateMock.mode}
             />
             <IdleHomeCard />
-            <StatusCard
-              variant="ambient"
-              personality="signal"
-              title="Assistente"
-              value={assistantLine(health.status)}
-              detail={assistantDetail(health.status, health.lastError)}
-              healthStatus={health.status}
-              onClick={onActivate}
-            />
+            <MedicalRecapCard />
           </div>
         </div>
 
         <span className="visually-hidden" aria-live="polite">
-          Stato assistente: {assistantLine(health.status)}
+          Stato assistente: {health.status}
         </span>
       </div>
 
