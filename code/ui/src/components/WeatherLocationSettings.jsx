@@ -148,7 +148,7 @@ export default function WeatherLocationSettings({ weather }) {
       setAddrStatus('error')
       setMsg('Inserisci un indirizzo.')
       window.setTimeout(() => setAddrStatus('idle'), 1500)
-      return
+      return null
     }
 
     setAddrStatus('loading')
@@ -158,7 +158,7 @@ export default function WeatherLocationSettings({ weather }) {
         setAddrStatus('error')
         setMsg('Indirizzo non trovato.')
         window.setTimeout(() => setAddrStatus('idle'), 2000)
-        return
+        return null
       }
       setLat(String(hit.lat))
       setLon(String(hit.lon))
@@ -168,6 +168,7 @@ export default function WeatherLocationSettings({ weather }) {
       )
       window.setTimeout(() => setMsg(''), 3500)
       setAddrStatus('idle')
+      return hit
     } catch (e) {
       setAddrStatus('error')
       setMsg(
@@ -179,6 +180,7 @@ export default function WeatherLocationSettings({ weather }) {
         setAddrStatus('idle')
         setMsg('')
       }, 3000)
+      return null
     }
   }
 
@@ -247,7 +249,13 @@ export default function WeatherLocationSettings({ weather }) {
     const a = preset?.address ?? ''
     setAddress(a)
     if (preset?.defaultName) setPlaceName(preset.defaultName)
-    await runAddressSearch(a)
+    const hit = await runAddressSearch(a)
+    if (hit) {
+      // Per i preset Casa/Ufficio l'intento è “imposta subito”.
+      setOverride({ lat: hit.lat, lon: hit.lon, label: hit.label || preset?.label })
+      setMsg(`Applicato: ${preset?.label || 'preset'}. Aggiornamento meteo in corso…`)
+      window.setTimeout(() => setMsg(''), 2500)
+    }
   }
 
   const onUseGps = async () => {
