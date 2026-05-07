@@ -151,7 +151,7 @@ export function useMedical(baseUrl, { intervalMs = 20000 } = {}) {
             lastUrl = url
             lastHttpStatus = res.status
             if (!res.ok) {
-              lastHttpErr = `HTTP ${res.status}`
+              lastHttpErr = `HTTP ${res.status} (${url})`
               continue
             }
             json = await res.json()
@@ -160,7 +160,7 @@ export function useMedical(baseUrl, { intervalMs = 20000 } = {}) {
             // Network/CORS error: try next candidate.
             lastUrl = url
             lastHttpStatus = null
-            lastHttpErr = e?.message ?? 'Failed to fetch'
+            lastHttpErr = `${e?.message ?? 'Failed to fetch'} (${url})`
           }
         }
         if (json == null) throw new Error(lastHttpErr ?? 'Failed to fetch')
