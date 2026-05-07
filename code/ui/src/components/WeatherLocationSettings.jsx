@@ -11,6 +11,17 @@ import {
 } from '../data/weatherLocation.js'
 
 const OVERRIDE_KEY = 'picoclaw.weather.override.v1'
+const PLACES_KEY = 'picoclaw.weather.places.v1'
+
+const NAME_SUGGESTIONS = [
+  'Casa',
+  'Ufficio',
+  'Casa Papà',
+  'Casa Mamma',
+  'Casa Zia',
+  'Casa Nonna',
+  'Casa Nonno',
+]
 
 function safeJsonParse(str) {
   try {
@@ -48,6 +59,37 @@ function clearOverride() {
   window.dispatchEvent(new Event('picoclaw-weather-override-changed'))
 }
 
+function loadPlaces() {
+  if (typeof window === 'undefined') return []
+  const raw = window.localStorage?.getItem(PLACES_KEY)
+  if (!raw) return []
+  const j = safeJsonParse(raw)
+  if (!Array.isArray(j)) return []
+  return j
+    .map((p) => {
+      if (!p || typeof p !== 'object') return null
+      const id = p.id != null ? String(p.id) : ''
+      const name = p.name != null ? String(p.name).trim() : ''
+      const address = p.address != null ? String(p.address).trim() : ''
+      const label = p.label != null ? String(p.label).trim() : ''
+      const lat = Number(p.lat)
+      const lon = Number(p.lon)
+      if (!id || !name || !Number.isFinite(lat) || !Number.isFinite(lon))
+        return null
+      return { id, name, address, label, lat, lon }
+    })
+    .filter(Boolean)
+}
+
+function savePlaces(list) {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage?.setItem(PLACES_KEY, JSON.stringify(list))
+  } catch {
+    // ignore quota/private mode
+  }
+}
+
 export default function WeatherLocationSettings({ weather }) {
   const configured = useMemo(() => getWeatherCoordinates(), [])
   const configuredLabel = useMemo(() => getConfiguredWeatherLocationLabel(), [])
@@ -63,12 +105,17 @@ export default function WeatherLocationSettings({ weather }) {
     override?.label ? override.label : configuredLabel,
   )
   const [address, setAddress] = useState('')
+  const [placeName, setPlaceName] = useState('Casa')
+  const [places, setPlaces] = useState(() => loadPlaces())
   const [msg, setMsg] = useState('')
   const [gpsStatus, setGpsStatus] = useState('idle') // 'idle' | 'loading' | 'error'
   const [addrStatus, setAddrStatus] = useState('idle') // 'idle' | 'loading' | 'error'
 
   useEffect(() => {
-    const onStorage = () => setOverrideState(loadOverride())
+    const onStorage = () => {
+      setOverrideState(loadOverride())
+      setPlaces(loadPlaces())
+    }
     window.addEventListener('storage', onStorage)
     window.addEventListener('picoclaw-weather-override-changed', onStorage)
     return () => {
@@ -78,6 +125,63 @@ export default function WeatherLocationSettings({ weather }) {
   }, [])
 
   const activeLabel = weather?.location ?? ''
+
+  const onApplyPlace = (p) => {
+    setLat(String(p.lat))
+    setLon(String(p.lon))
+    setLabel(p.label || p.name)
+    setAddress(p.address || '')
+    setMsg(`Selezionato: ${p.name}. Premi “Salva” per applicarlo come override.`)
+    window.setTimeout(() => setMsg(''), 3000)
+  }
+
+  const onApplyPlaceNow = (p) => {
+    setLat(String(p.lat))
+    setLon(String(p.lon))
+    setLabel(p.label || p.name)
+    setAddress(p.address || '')
+    setOverride({ lat: p.lat, lon: p.lon, label: p.label || p.name })
+    setMsg(`Applicato: ${p.name}. Aggiornamento meteo in corso…`)
+    window.setTimeout(() => setMsg(''), 2500)
+  }
+
+  const onDeletePlace = (id) => {
+    const next = places.filter((p) => p.id !== id)
+    setPlaces(next)
+    savePlaces(next)
+    setMsg('Posizione rimossa.')
+    window.setTimeout(() => setMsg(''), 2000)
+  }
+
+  const onSaveAsPlace = () => {
+    setMsg('')
+    const name = String(placeName ?? '').trim()
+    const latN = Number(lat)
+    const lonN = Number(lon)
+    if (!name) {
+      setMsg('Inserisci un nome per la posizione.')
+      return
+    }
+    if (!Number.isFinite(latN) || !Number.isFinite(lonN)) {
+      setMsg('Coordinate non valide.')
+      return
+    }
+
+    const id = `p_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`
+    const entry = {
+      id,
+      name,
+      address: String(address ?? '').trim(),
+      label: String(label ?? '').trim() || name,
+      lat: latN,
+      lon: lonN,
+    }
+    const next = [entry, ...places]
+    setPlaces(next)
+    savePlaces(next)
+    setMsg('Salvato in elenco posizioni.')
+    window.setTimeout(() => setMsg(''), 2000)
+  }
 
   const onSearchAddress = async () => {
     setMsg('')
@@ -101,7 +205,9 @@ export default function WeatherLocationSettings({ weather }) {
       setLat(String(hit.lat))
       setLon(String(hit.lon))
       setLabel(hit.label)
-      setMsg('Indirizzo risolto. Premi “Salva” per applicarlo come override.')
+      setMsg(
+        'Indirizzo risolto. Premi “Salva” per applicarlo come override o “Salva in elenco”.',
+      )
       window.setTimeout(() => setMsg(''), 3500)
       setAddrStatus('idle')
     } catch (e) {
@@ -192,6 +298,47 @@ export default function WeatherLocationSettings({ weather }) {
           </p>
         </div>
 
+        {places.length ? (
+          <div className="settings-places" aria-label="Posizioni salvate">
+            <div className="settings-places__head">
+              <h3 className="settings-places__title">Posizioni salvate</h3>
+              <p className="settings-places__hint">Tocca per selezionare o applicare.</p>
+            </div>
+            <div className="settings-places__list">
+              {places.map((p) => (
+                <div key={p.id} className="settings-place">
+                  <button
+                    type="button"
+                    className="settings-place__main"
+                    onClick={() => onApplyPlace(p)}
+                  >
+                    <span className="settings-place__name">{p.name}</span>
+                    <span className="settings-place__meta">
+                      {(p.label || '').trim() || '—'}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className="settings-place__btn"
+                    onClick={() => onApplyPlaceNow(p)}
+                    aria-label={`Applica ${p.name}`}
+                  >
+                    Usa
+                  </button>
+                  <button
+                    type="button"
+                    className="settings-place__btn settings-place__btn--danger"
+                    onClick={() => onDeletePlace(p.id)}
+                    aria-label={`Rimuovi ${p.name}`}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
         <div className="settings-grid">
           <label className="settings-field settings-field--wide">
             <span className="settings-field__label">Indirizzo</span>
@@ -235,6 +382,21 @@ export default function WeatherLocationSettings({ weather }) {
         </div>
 
         <div className="settings-actions">
+          <label className="settings-field settings-field--wide settings-field--inline">
+            <span className="settings-field__label">Salva in elenco come</span>
+            <input
+              className="settings-field__input"
+              list="place-name-suggestions"
+              value={placeName}
+              onChange={(e) => setPlaceName(e.target.value)}
+              aria-label="Nome posizione"
+            />
+            <datalist id="place-name-suggestions">
+              {NAME_SUGGESTIONS.map((n) => (
+                <option key={n} value={n} />
+              ))}
+            </datalist>
+          </label>
           <button
             type="button"
             className="settings-btn settings-btn--ghost"
@@ -242,6 +404,13 @@ export default function WeatherLocationSettings({ weather }) {
             disabled={addrStatus === 'loading'}
           >
             {addrStatus === 'loading' ? 'Cerca…' : 'Cerca indirizzo'}
+          </button>
+          <button
+            type="button"
+            className="settings-btn settings-btn--ghost"
+            onClick={onSaveAsPlace}
+          >
+            Salva in elenco
           </button>
           <button
             type="button"

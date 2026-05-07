@@ -1599,6 +1599,99 @@ html[data-theme='dark'] .indoor-climate-card--mode-dehumid {
   grid-column: 1 / -1;
 }
 
+.settings-field--inline {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.settings-places {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-soft);
+  background: color-mix(in srgb, var(--bg-elevated) 55%, transparent);
+}
+
+.settings-places__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.settings-places__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.settings-places__hint {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.settings-places__list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.settings-place {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.settings-place__main {
+  min-height: 52px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-soft);
+  background: var(--bg-elevated);
+  color: var(--text);
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  cursor: none;
+}
+
+.settings-place__name {
+  font-weight: 800;
+}
+
+.settings-place__meta {
+  color: var(--text-muted);
+  font-weight: 650;
+  font-size: 0.95rem;
+}
+
+.settings-place__btn {
+  min-height: 52px;
+  min-width: 56px;
+  padding: 0 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-soft);
+  background: transparent;
+  color: var(--text);
+  font-weight: 800;
+  cursor: none;
+}
+
+.settings-place__btn--danger {
+  color: color-mix(in srgb, #ff4d4d 78%, var(--text));
+  border-color: color-mix(in srgb, #ff4d4d 22%, var(--border-soft));
+}
+
 .settings-field__label {
   font-size: 0.95rem;
   font-weight: 600;
