@@ -1,3 +1,4 @@
+import { useId } from 'react'
 import StatusCard from './StatusCard.jsx'
 
 function fmt(v, suffix = '') {
@@ -5,7 +6,35 @@ function fmt(v, suffix = '') {
   return Number.isFinite(n) ? `${Math.round(n)}${suffix}` : '—'
 }
 
-function Sparkline({ points, stroke = 'currentColor', fill = 'transparent' }) {
+function linePath(points) {
+  if (points.length < 2) return ''
+  const out = [`M${points[0][0].toFixed(2)},${points[0][1].toFixed(2)}`]
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i - 1] ?? points[i]
+    const p1 = points[i]
+    const p2 = points[i + 1]
+    const p3 = points[i + 2] ?? p2
+    const c1x = p1[0] + (p2[0] - p0[0]) / 6
+    const c1y = p1[1] + (p2[1] - p0[1]) / 6
+    const c2x = p2[0] - (p3[0] - p1[0]) / 6
+    const c2y = p2[1] - (p3[1] - p1[1]) / 6
+    out.push(
+      `C${c1x.toFixed(2)},${c1y.toFixed(2)} ${c2x.toFixed(2)},${c2y.toFixed(2)} ${p2[0].toFixed(2)},${p2[1].toFixed(2)}`,
+    )
+  }
+  return out.join(' ')
+}
+
+function Sparkline({
+  points,
+  stroke = 'currentColor',
+  fill = 'transparent',
+  height = 58,
+  strokeWidth = 2.8,
+  dot = true,
+  grid = true,
+}) {
+  const uid = useId()
   const ys = points
     .map((p) => Number(p))
     .filter((n) => Number.isFinite(n))
@@ -14,39 +43,67 @@ function Sparkline({ points, stroke = 'currentColor', fill = 'transparent' }) {
 
   const min = Math.min(...ys)
   const max = Math.max(...ys)
-  const w = 220
-  const h = 44
-  const pad = 2
+  const w = 320
+  const h = height
+  const pad = 6
   const span = max - min || 1
 
-  const d = ys
-    .map((y, i) => {
-      const x = (i / (ys.length - 1)) * (w - pad * 2) + pad
-      const yy = h - pad - ((y - min) / span) * (h - pad * 2)
-      return `${i === 0 ? 'M' : 'L'}${x.toFixed(2)},${yy.toFixed(2)}`
-    })
-    .join(' ')
+  const pts = ys.map((y, i) => {
+    const x = (i / (ys.length - 1)) * (w - pad * 2) + pad
+    const yy = h - pad - ((y - min) / span) * (h - pad * 2)
+    return [x, yy]
+  })
+
+  const d = linePath(pts)
+  const last = pts[pts.length - 1]
 
   const area = `${d} L${w - pad},${h - pad} L${pad},${h - pad} Z`
+  const gid = `spark-${uid}`
 
   return (
     <svg
       className="sparkline"
       viewBox={`0 0 ${w} ${h}`}
       width="100%"
-      height="44"
+      height={h}
       aria-hidden
     >
+      <defs>
+        <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="currentColor" stopOpacity="0.55" />
+          <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {grid ? (
+        <>
+          <path
+            d={`M${pad},${pad + (h - pad * 2) * 0.33} H${w - pad}`}
+            stroke="rgba(255,255,255,0.10)"
+            strokeWidth="1"
+          />
+          <path
+            d={`M${pad},${pad + (h - pad * 2) * 0.66} H${w - pad}`}
+            stroke="rgba(255,255,255,0.08)"
+            strokeWidth="1"
+          />
+        </>
+      ) : null}
       <path d={area} fill={fill} opacity="0.55" />
-      <path d={d} fill="none" stroke={stroke} strokeWidth="2.6" />
+      <path d={d} fill="none" stroke={stroke} strokeWidth={strokeWidth} />
+      {dot ? (
+        <>
+          <circle cx={last[0]} cy={last[1]} r="5.2" fill={stroke} opacity="0.18" />
+          <circle cx={last[0]} cy={last[1]} r="2.6" fill={stroke} />
+        </>
+      ) : null}
     </svg>
   )
 }
 
-function MetricDetail({ points, stroke, fill, caption }) {
+function MetricDetail({ points, stroke, fill, caption, height }) {
   return (
     <div className="status-card__spark">
-      <Sparkline points={points} stroke={stroke} fill={fill} />
+      <Sparkline points={points} stroke={stroke} fill={fill} height={height} />
       {caption ? <div className="status-card__spark-caption">{caption}</div> : null}
     </div>
   )
@@ -108,6 +165,7 @@ export default function MedicalScreen({ medical }) {
                   stroke="rgba(96,165,250,0.95)"
                   fill="rgba(96,165,250,0.18)"
                   caption="Oggi"
+                  height={72}
                 />
               ) : (
                 ''
@@ -127,6 +185,7 @@ export default function MedicalScreen({ medical }) {
                 stroke="rgba(255,92,92,0.95)"
                 fill="rgba(255,92,92,0.16)"
                 caption="Trend"
+                height={58}
               />
             ) : (
               ''
@@ -144,6 +203,7 @@ export default function MedicalScreen({ medical }) {
                 stroke="rgba(120,210,255,0.95)"
                 fill="rgba(120,210,255,0.16)"
                 caption="Trend"
+                height={58}
               />
             ) : (
               ''

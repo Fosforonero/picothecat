@@ -616,8 +616,16 @@ button.weather-card.weather-card--interactive {
   min-width: 0;
 }
 
-.medical-recap__cell--wide {
-  grid-column: 1 / -1;
+.medical-recap__cell--hero {
+  padding: 12px 14px;
+  border-radius: calc(var(--radius-md) + 2px);
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--surface) 86%, var(--accent) 14%) 0%,
+    color-mix(in srgb, var(--bg-elevated) 78%, transparent) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--accent) 14%, var(--border-soft));
+  box-shadow: var(--shadow-inner);
 }
 
 .medical-recap__k {
@@ -631,6 +639,17 @@ button.weather-card.weather-card--interactive {
   color: var(--text);
   font-weight: 850;
   font-variant-numeric: tabular-nums;
+}
+
+.medical-recap__cell--hero .medical-recap__k {
+  font-size: clamp(0.95rem, 2.0vw, 1.05rem);
+  font-weight: 760;
+  letter-spacing: 0.02em;
+}
+
+.medical-recap__cell--hero .medical-recap__v {
+  font-size: clamp(1.65rem, 4.0vw, 2.15rem);
+  font-weight: 900;
 }
 
 .medical-recap__unlock {
@@ -1667,6 +1686,11 @@ html[data-theme='dark'] .indoor-climate-card--mode-dehumid {
   color: var(--text-muted);
   font-weight: 650;
   letter-spacing: 0.01em;
+}
+
+.medical-screen .sparkline {
+  opacity: 1;
+  filter: drop-shadow(0 12px 22px color-mix(in srgb, var(--text) 16%, transparent));
 }
 
 @media (orientation: portrait), (max-width: 900px) {
