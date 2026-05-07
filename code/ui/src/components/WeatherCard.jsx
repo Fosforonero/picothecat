@@ -59,7 +59,7 @@ export default function WeatherCard({
             {String(weather.location || '')
               .split(',')
               .map((s) => s.trim())
-              .filter(Boolean)
+              .filter((s) => s && !/\d/.test(s) && !/^via\b/i.test(s))
               .slice(0, 2)
               .join(', ')}
           </div>

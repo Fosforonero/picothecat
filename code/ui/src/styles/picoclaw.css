@@ -530,7 +530,7 @@ button.weather-card.weather-card--interactive {
 
 .weather-card__glyph-layer {
   position: absolute;
-  inset: -6% -18% -10% 26%;
+  inset: -10% -18% -10% 22%;
   z-index: 2;
   pointer-events: none;
   display: flex;
@@ -542,16 +542,16 @@ button.weather-card.weather-card--interactive {
 }
 
 .weather-card__glyph-layer .weather-glyph {
-  width: min(510px, 132%);
+  width: min(484px, 126%);
   height: auto;
-  max-width: min(560px, 144%);
-  max-height: min(380px, 122%);
-  min-width: min(300px, 88%);
+  max-width: min(532px, 138%);
+  max-height: min(360px, 116%);
+  min-width: min(286px, 84%);
   aspect-ratio: 1;
   opacity: 1;
   margin: 0;
   margin-right: -6%;
-  transform: translate(6%, -10%) scale(1.12);
+  transform: translate(4%, -12%) scale(1.12);
 }
 
 /* Velatura sopra il glifo: integra l’icona nello sfondo e sostiene la lettura del testo */

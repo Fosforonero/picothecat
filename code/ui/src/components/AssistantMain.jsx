@@ -52,9 +52,13 @@ export default function AssistantMain() {
       <form className="assistant-main__input-row" onSubmit={onSend}>
         <input
           ref={inputRef}
+          type="text"
+          inputMode="text"
+          enterKeyHint="send"
           className="assistant-main__input"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
+          onPointerDown={() => inputRef.current?.focus?.()}
           placeholder="Scrivi…"
           aria-label="Messaggio"
           autoFocus
