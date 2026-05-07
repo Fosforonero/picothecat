@@ -17,7 +17,7 @@ function clamp01(x) {
  *   onClose: () => void,
  *   locationLabel: string,
  *   rows: Array<{ dayLabel: string, summary: string, condition: string, min: number | null, max: number | null, humidity?: number | null }>,
- *   hourlyToday?: Array<{ time: string, hourLabel: string, condition: string, summary: string, temp: number | null, precipProb: number | null }>,
+ *   hourlyToday?: Array<{ time: string, hourLabel: string, condition: string, summary: string, temp: number | null, humidity: number | null, precipProb: number | null }>,
  *   sunTimes?: { sunriseISO: string, sunsetISO: string } | null,
  *   status?: 'loading' | 'ready' | 'error',
  * }} props
@@ -61,6 +61,8 @@ export default function WeatherForecastPanel({
   }
   const sunrise = sunTimes?.sunriseISO ? fmtSun(sunTimes.sunriseISO) : ''
   const sunset = sunTimes?.sunsetISO ? fmtSun(sunTimes.sunsetISO) : ''
+  const showToday = rows?.[0]?.dayLabel === 'Oggi' && (hourlyToday?.length || sunrise || sunset)
+  const weekRows = showToday ? rows.slice(1) : rows
 
   const body = (
     <div
@@ -91,16 +93,20 @@ export default function WeatherForecastPanel({
           </button>
         </div>
 
-        {rows?.[0]?.dayLabel === 'Oggi' && (hourlyToday?.length || sunrise || sunset) ? (
+        {showToday ? (
           <section className="weather-forecast-today" aria-label="Oggi">
-            <div className="weather-forecast-today__meta">
-              {sunrise ? <span>Alba {sunrise}</span> : null}
-              {sunset ? <span>Tramonto {sunset}</span> : null}
-            </div>
-            {hourlyToday?.length ? (
-              <div className="weather-forecast-hourly" role="list" aria-label="Previsioni orarie">
+            <article className="weather-forecast-todaycard">
+              <div className="weather-forecast-todaycard__head">
+                <h3 className="weather-forecast-todaycard__title">Oggi</h3>
+                <div className="weather-forecast-todaycard__meta">
+                  {sunrise ? <span>Alba {sunrise}</span> : null}
+                  {sunset ? <span>Tramonto {sunset}</span> : null}
+                </div>
+              </div>
+
+              <div className="weather-forecast-todaycard__strip" role="list" aria-label="Oggi: previsioni orarie">
                 {hourlyToday.map((h) => (
-                  <article
+                  <div
                     key={h.time}
                     className={`weather-forecast-hour weather-forecast-hour--${h.condition}`}
                     role="listitem"
@@ -112,18 +118,23 @@ export default function WeatherForecastPanel({
                     <div className="weather-forecast-hour__temp">
                       {h.temp != null ? `${h.temp}°` : '—'}
                     </div>
-                    <div className="weather-forecast-hour__prob">
-                      {h.precipProb != null ? `${h.precipProb}%` : ' '}
+                    <div className="weather-forecast-hour__sub">
+                      <span className="weather-forecast-hour__hum">
+                        {h.humidity != null ? `${h.humidity}%` : ' '}
+                      </span>
+                      <span className="weather-forecast-hour__prob">
+                        {h.precipProb != null ? `${h.precipProb}%` : ' '}
+                      </span>
                     </div>
-                  </article>
+                  </div>
                 ))}
               </div>
-            ) : null}
+            </article>
           </section>
         ) : null}
 
         <section className="weather-forecast-week" aria-label="Previsioni 7 giorni">
-          {rows.length === 0 ? (
+          {weekRows.length === 0 ? (
             <p className="weather-forecast-week__empty">
               {status === 'loading'
                 ? 'Caricamento previsioni…'
@@ -133,7 +144,7 @@ export default function WeatherForecastPanel({
             </p>
           ) : (
             <div className="weather-forecast-vlist" role="list">
-              {rows.map((row, idx) => {
+              {weekRows.map((row, idx) => {
                 const min = row.min != null ? Number(row.min) : null
                 const max = row.max != null ? Number(row.max) : null
                 const humidity =

@@ -51,11 +51,22 @@ export function useHealth(baseUrl, { intervalMs = 20000 } = {}) {
         }
       } catch (e) {
         if (e.name === 'AbortError') return
-        setState((s) => ({
-          ...s,
-          status: 'offline',
-          lastError: e?.message ?? 'Errore di rete',
-        }))
+        // Fallback: se il backend è raggiungibile ma CORS blocca la lettura,
+        // una fetch no-cors risolve (risposta opaque) senza throw.
+        try {
+          await fetch(url, { mode: 'no-cors', cache: 'no-store' })
+          setState({
+            status: 'online',
+            lastOkAt: Date.now(),
+            lastError: null,
+          })
+        } catch {
+          setState((s) => ({
+            ...s,
+            status: 'offline',
+            lastError: e?.message ?? 'Errore di rete',
+          }))
+        }
       }
     }
 

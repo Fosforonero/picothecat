@@ -7,7 +7,7 @@ import { getConfiguredWeatherLocationLabel } from '../config/runtime.js'
 /**
  * @param {unknown} hourly
  * @param {string} dayISO YYYY-MM-DD
- * @returns {Array<{ time: string, hourLabel: string, condition: string, summary: string, temp: number | null, precipProb: number | null }>}
+ * @returns {Array<{ time: string, hourLabel: string, condition: string, summary: string, temp: number | null, humidity: number | null, precipProb: number | null }>}
  */
 export function buildHourlyToday(hourly, dayISO) {
   if (!hourly || typeof hourly !== 'object') return []
@@ -16,6 +16,9 @@ export function buildHourlyToday(hourly, dayISO) {
 
   const temps = Array.isArray(hourly.temperature_2m) ? hourly.temperature_2m : null
   const codes = Array.isArray(hourly.weather_code) ? hourly.weather_code : null
+  const rhs = Array.isArray(hourly.relative_humidity_2m)
+    ? hourly.relative_humidity_2m
+    : null
   const precs = Array.isArray(hourly.precipitation_probability)
     ? hourly.precipitation_probability
     : null
@@ -42,6 +45,12 @@ export function buildHourlyToday(hourly, dayISO) {
         ? Math.max(0, Math.min(100, Math.round(Number(probRaw))))
         : null
 
+    const rhRaw = rhs?.[i]
+    const humidity =
+      rhRaw != null && Number.isFinite(Number(rhRaw))
+        ? Math.max(0, Math.min(100, Math.round(Number(rhRaw))))
+        : null
+
     const code = codes?.[i]
     const wind = winds?.[i]
     const ui = openMeteoCodeToUi(
@@ -55,17 +64,13 @@ export function buildHourlyToday(hourly, dayISO) {
       condition: ui.condition,
       summary: ui.summary,
       temp,
+      humidity,
       precipProb,
     })
   }
 
-  // Mostra da “adesso” in avanti (prossime ~12 ore), se abbiamo un clock coerente.
-  const now = Date.now()
-  const future = out.filter((x) => {
-    const dt = new Date(x.time).getTime()
-    return Number.isFinite(dt) ? dt >= now - 20 * 60 * 1000 : true
-  })
-  return (future.length ? future : out).slice(0, 12)
+  // Full day strip: 00:00 → 23:00
+  return out
 }
 
 /**

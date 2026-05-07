@@ -542,16 +542,16 @@ button.weather-card.weather-card--interactive {
 }
 
 .weather-card__glyph-layer .weather-glyph {
-  width: min(420px, 110%);
+  width: min(510px, 132%);
   height: auto;
-  max-width: min(460px, 120%);
-  max-height: min(320px, 110%);
-  min-width: min(240px, 72%);
+  max-width: min(560px, 144%);
+  max-height: min(380px, 122%);
+  min-width: min(300px, 88%);
   aspect-ratio: 1;
   opacity: 1;
   margin: 0;
   margin-right: -6%;
-  transform: translate(6%, -2%) scale(1.08);
+  transform: translate(6%, -10%) scale(1.12);
 }
 
 /* Velatura sopra il glifo: integra l’icona nello sfondo e sostiene la lettura del testo */
@@ -1908,16 +1908,40 @@ select.settings-field__input {
   padding: 14px 18px 4px;
 }
 
-.weather-forecast-today__meta {
+.weather-forecast-todaycard {
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-soft);
+  background: color-mix(in srgb, var(--bg-elevated) 70%, transparent);
+  padding: 14px 14px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.weather-forecast-todaycard__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.weather-forecast-todaycard__title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: var(--text);
+}
+
+.weather-forecast-todaycard__meta {
   display: flex;
   gap: 14px;
   flex-wrap: wrap;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--text-muted);
-  margin-bottom: 10px;
 }
 
-.weather-forecast-hourly {
+.weather-forecast-todaycard__strip {
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: minmax(92px, 1fr);
@@ -1959,8 +1983,19 @@ select.settings-field__input {
   color: var(--text);
 }
 
+.weather-forecast-hour__sub {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-weight: 850;
+  font-size: 0.95rem;
+}
+
+.weather-forecast-hour__hum {
+  color: color-mix(in srgb, #3cc6ff 70%, var(--text-muted));
+}
+
 .weather-forecast-hour__prob {
-  font-weight: 800;
   color: color-mix(in srgb, var(--accent) 70%, var(--text-muted));
 }
 
