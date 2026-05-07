@@ -616,6 +616,10 @@ button.weather-card.weather-card--interactive {
   min-width: 0;
 }
 
+.medical-recap__cell--wide {
+  grid-column: 1 / -1;
+}
+
 .medical-recap__cell--hero {
   padding: 12px 14px;
   border-radius: calc(var(--radius-md) + 2px);

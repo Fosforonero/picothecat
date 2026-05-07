@@ -28,7 +28,6 @@ function linePath(points) {
 function Sparkline({
   points,
   stroke = 'currentColor',
-  fill = 'transparent',
   height = 58,
   strokeWidth = 2.8,
   dot = true,
@@ -70,8 +69,8 @@ function Sparkline({
     >
       <defs>
         <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="currentColor" stopOpacity="0.55" />
-          <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
+          <stop offset="0%" stopColor={stroke} stopOpacity="0.55" />
+          <stop offset="100%" stopColor={stroke} stopOpacity="0" />
         </linearGradient>
       </defs>
       {grid ? (
@@ -88,8 +87,15 @@ function Sparkline({
           />
         </>
       ) : null}
-      <path d={area} fill={fill} opacity="0.55" />
-      <path d={d} fill="none" stroke={stroke} strokeWidth={strokeWidth} />
+      <path d={area} fill={`url(#${gid})`} opacity="1" />
+      <path
+        d={d}
+        fill="none"
+        stroke={stroke}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
       {dot ? (
         <>
           <circle cx={last[0]} cy={last[1]} r="5.2" fill={stroke} opacity="0.18" />
@@ -100,10 +106,10 @@ function Sparkline({
   )
 }
 
-function MetricDetail({ points, stroke, fill, caption, height }) {
+function MetricDetail({ points, stroke, caption, height }) {
   return (
     <div className="status-card__spark">
-      <Sparkline points={points} stroke={stroke} fill={fill} height={height} />
+      <Sparkline points={points} stroke={stroke} height={height} />
       {caption ? <div className="status-card__spark-caption">{caption}</div> : null}
     </div>
   )
@@ -163,7 +169,6 @@ export default function MedicalScreen({ medical }) {
                 <MetricDetail
                   points={series('steps')}
                   stroke="rgba(96,165,250,0.95)"
-                  fill="rgba(96,165,250,0.18)"
                   caption="Oggi"
                   height={72}
                 />
@@ -183,7 +188,6 @@ export default function MedicalScreen({ medical }) {
               <MetricDetail
                 points={series('bpm')}
                 stroke="rgba(255,92,92,0.95)"
-                fill="rgba(255,92,92,0.16)"
                 caption="Trend"
                 height={58}
               />
@@ -201,7 +205,6 @@ export default function MedicalScreen({ medical }) {
               <MetricDetail
                 points={series('distanceMeters')}
                 stroke="rgba(120,210,255,0.95)"
-                fill="rgba(120,210,255,0.16)"
                 caption="Trend"
                 height={58}
               />
