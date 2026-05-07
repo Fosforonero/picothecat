@@ -9,6 +9,7 @@ import {
 import {
   WEATHER_LOCATION_SOURCE,
   shouldUseBrowserGeolocation,
+  shouldUseInternetGeoIp,
   requestBrowserCoordinates,
   requestInternetGeoIpCoordinates,
   formatGeoIpLabel,
@@ -214,7 +215,7 @@ export function useWeather() {
     }
 
     async function tryInternetGeoIpAndFetch() {
-      if (!shouldUseBrowserGeolocation()) return false
+      if (!shouldUseInternetGeoIp()) return false
       devLog('trying internet geoip')
       try {
         const geo = await Promise.race([

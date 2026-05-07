@@ -29,6 +29,7 @@ VITE_WEATHER_LAT=41.8693
 VITE_WEATHER_LON=12.5113
 VITE_WEATHER_LABEL="Appio-Latino, Roma"
 VITE_WEATHER_USE_GEOLOCATION=false
+VITE_WEATHER_USE_GEOIP=true
 ```
 
 This guarantees that the UI shows the correct **quartiere label** even when the browser blocks GPS.

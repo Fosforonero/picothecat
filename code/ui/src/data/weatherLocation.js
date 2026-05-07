@@ -28,6 +28,16 @@ export function shouldUseBrowserGeolocation() {
 }
 
 /**
+ * GeoIP da internet (no prompt). Default: ON.
+ * @returns {boolean}
+ */
+export function shouldUseInternetGeoIp() {
+  const raw = import.meta.env.VITE_WEATHER_USE_GEOIP
+  if (raw === '0' || raw === 'false' || raw === 'off') return false
+  return true
+}
+
+/**
  * @returns {boolean}
  */
 export function isBrowserGeolocationUsable() {
