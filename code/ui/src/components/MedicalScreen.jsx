@@ -5,7 +5,7 @@ function fmt(v, suffix = '') {
   return Number.isFinite(n) ? `${Math.round(n)}${suffix}` : '—'
 }
 
-function Sparkline({ points, stroke = 'currentColor' }) {
+function Sparkline({ points, stroke = 'currentColor', fill = 'transparent' }) {
   const ys = points
     .map((p) => Number(p))
     .filter((n) => Number.isFinite(n))
@@ -27,6 +27,8 @@ function Sparkline({ points, stroke = 'currentColor' }) {
     })
     .join(' ')
 
+  const area = `${d} L${w - pad},${h - pad} L${pad},${h - pad} Z`
+
   return (
     <svg
       className="sparkline"
@@ -35,8 +37,18 @@ function Sparkline({ points, stroke = 'currentColor' }) {
       height="44"
       aria-hidden
     >
-      <path d={d} fill="none" stroke={stroke} strokeWidth="2.4" />
+      <path d={area} fill={fill} opacity="0.55" />
+      <path d={d} fill="none" stroke={stroke} strokeWidth="2.6" />
     </svg>
+  )
+}
+
+function MetricDetail({ points, stroke, fill, caption }) {
+  return (
+    <div className="status-card__spark">
+      <Sparkline points={points} stroke={stroke} fill={fill} />
+      {caption ? <div className="status-card__spark-caption">{caption}</div> : null}
+    </div>
   )
 }
 
@@ -70,31 +82,55 @@ export default function MedicalScreen({ medical }) {
   const series = (key) => history.map((h) => h?.[key]).filter((v) => v != null)
   return (
     <div className="medical-screen">
-      <p className="side-heading">
-        Salute
-        {status === 'loading'
-          ? ' · caricamento…'
-          : status === 'error'
-            ? medical?.lastError
-              ? ` · offline (${medical.lastError})`
-              : ' · offline'
-            : ''}
-      </p>
+      <div className="medical-screen__head">
+        <div className="medical-screen__title">Salute</div>
+        <div className="medical-screen__hint">
+          {status === 'loading'
+            ? 'Caricamento…'
+            : status === 'error'
+              ? medical?.lastError
+                ? `Offline (${medical.lastError})`
+                : 'Offline'
+              : d?.ts
+                ? `Aggiornato · ${new Date(d.ts).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`
+                : 'Oggi'}
+        </div>
+      </div>
       <div className="medical-screen__grid">
         <div className="medical-screen__wide">
           <StatusCard
             title="Passi"
             value={d ? fmtSteps(d.steps) : '—'}
             detail={
-              status === 'ready' ? <Sparkline points={series('steps')} stroke="rgba(96,165,250,0.95)" /> : ''
+              status === 'ready' ? (
+                <MetricDetail
+                  points={series('steps')}
+                  stroke="rgba(96,165,250,0.95)"
+                  fill="rgba(96,165,250,0.18)"
+                  caption="Oggi"
+                />
+              ) : (
+                ''
+              )
             }
+            variant="ambient"
+            personality="signal"
           />
         </div>
         <StatusCard
           title="Frequenza cardiaca"
           value={d ? fmt(d.bpm) : '—'}
           detail={
-            status === 'ready' ? <Sparkline points={series('bpm')} stroke="rgba(255,92,92,0.95)" /> : ''
+            status === 'ready' ? (
+              <MetricDetail
+                points={series('bpm')}
+                stroke="rgba(255,92,92,0.95)"
+                fill="rgba(255,92,92,0.16)"
+                caption="Trend"
+              />
+            ) : (
+              ''
+            )
           }
         />
         <StatusCard title="Sonno" value={d ? fmtSleep(d.sleepMinutes) : '—'} detail="" />
@@ -102,7 +138,16 @@ export default function MedicalScreen({ medical }) {
           title="Distanza"
           value={d ? fmtKm(d.distanceMeters) : '—'}
           detail={
-            status === 'ready' ? <Sparkline points={series('distanceMeters')} stroke="rgba(120,210,255,0.95)" /> : ''
+            status === 'ready' ? (
+              <MetricDetail
+                points={series('distanceMeters')}
+                stroke="rgba(120,210,255,0.95)"
+                fill="rgba(120,210,255,0.16)"
+                caption="Trend"
+              />
+            ) : (
+              ''
+            )
           }
         />
         <StatusCard title="Calorie" value={d ? fmt(d.calories, ' kcal') : '—'} detail={d?.unlock ?? ''} />

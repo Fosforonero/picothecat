@@ -1610,7 +1610,28 @@ html[data-theme='dark'] .indoor-climate-card--mode-dehumid {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  overflow: hidden;
+  padding: clamp(14px, 2.6vw, 24px);
+  overflow-y: auto;
+}
+
+.medical-screen__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.medical-screen__title {
+  font-size: clamp(1.15rem, 2.6vw, 1.55rem);
+  font-weight: 780;
+  letter-spacing: 0.01em;
+  color: var(--text);
+}
+
+.medical-screen__hint {
+  color: var(--text-muted);
+  font-weight: 650;
+  letter-spacing: 0.01em;
 }
 
 .medical-screen__grid {
@@ -1623,6 +1644,29 @@ html[data-theme='dark'] .indoor-climate-card--mode-dehumid {
 
 .medical-screen__wide {
   grid-column: 1 / -1;
+}
+
+.medical-screen .status-card {
+  min-height: 0;
+  padding: clamp(16px, 2.6vw, 22px);
+}
+
+.medical-screen .status-card__detail {
+  font-size: clamp(0.92rem, 2vw, 1.05rem);
+}
+
+.status-card__spark {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.status-card__spark-caption {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  font-weight: 650;
+  letter-spacing: 0.01em;
 }
 
 @media (orientation: portrait), (max-width: 900px) {
