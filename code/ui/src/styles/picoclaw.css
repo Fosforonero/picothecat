@@ -1223,6 +1223,14 @@ html[data-theme='dark'] .indoor-climate-card--mode-dehumid {
   min-height: 132px;
 }
 
+.status-card--interactive {
+  text-align: left;
+}
+
+.status-card--interactive:active {
+  transform: scale(0.99);
+}
+
 .status-card--ambient {
   min-height: clamp(118px, 14dvh, 180px);
   padding: clamp(16px, 2.5dvh, 26px);

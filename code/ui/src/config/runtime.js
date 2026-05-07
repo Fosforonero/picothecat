@@ -70,7 +70,13 @@ export function getBacklightRestoreUrl() {
  */
 export function getBackendBaseUrl() {
   const raw = import.meta.env.VITE_BACKEND_BASE
-  if (raw == null || String(raw).trim() === '') return ''
+  if (raw == null || String(raw).trim() === '') {
+    // Dev: usa proxy Vite su `/health` (stessa origine).
+    if (import.meta.env?.DEV) return ''
+    // Prod (Raspberry): UI è spesso servita staticamente su :3000 mentre il backend gira su :8787.
+    // Default a loopback per evitare "failed to fetch" verso `/health` statico.
+    return 'http://127.0.0.1:8787'
+  }
   return String(raw).replace(/\/$/, '')
 }
 

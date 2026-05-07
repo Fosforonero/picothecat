@@ -100,6 +100,7 @@ export default function IdleScreen({
               value={assistantLine(health.status)}
               detail={assistantDetail(health.status, health.lastError)}
               healthStatus={health.status}
+              onClick={onActivate}
             />
           </div>
         </div>

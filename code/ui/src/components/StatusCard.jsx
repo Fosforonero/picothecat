@@ -12,6 +12,7 @@ function statusDotClass(status) {
  *   healthStatus?: 'online' | 'offline' | 'checking'
  *   variant?: 'default' | 'ambient'
  *   personality?: 'home' | 'signal'
+ *   onClick?: (() => void) | undefined
  * }} props
  */
 export default function StatusCard({
@@ -21,6 +22,7 @@ export default function StatusCard({
   healthStatus,
   variant = 'default',
   personality,
+  onClick,
 }) {
   let root =
     variant === 'ambient'
@@ -28,8 +30,16 @@ export default function StatusCard({
       : 'status-card'
   if (personality) root += ` status-card--personality-${personality}`
 
+  const interactive = typeof onClick === 'function'
+  const Tag = interactive ? 'button' : 'article'
+
   return (
-    <article className={root}>
+    <Tag
+      type={interactive ? 'button' : undefined}
+      className={`${root}${interactive ? ' status-card--interactive' : ''}`}
+      onClick={interactive ? onClick : undefined}
+      aria-label={interactive ? `${title}: ${value}. Apri chat` : undefined}
+    >
       <div className="status-card__title">{title}</div>
       <div className="status-card__row">
         {healthStatus != null ? (
@@ -38,6 +48,6 @@ export default function StatusCard({
         <div className="status-card__value">{value}</div>
       </div>
       {detail ? <div className="status-card__detail">{detail}</div> : null}
-    </article>
+    </Tag>
   )
 }
