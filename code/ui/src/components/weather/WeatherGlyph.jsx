@@ -1,11 +1,11 @@
-import { useId } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 
 /**
  * Glifi meteo semplificati (viewBox 48×48) — forme grasse, leggibili a distanza.
- * @param {{ variant: string }} props
+ * @param {{ variant: string, animateMs?: number }} props
  */
 
-const ASSET = {
+const STATIC_ASSET = {
   sunny: new URL('../../assets/weather-amcharts/static/day.svg', import.meta.url)
     .href,
   clear_night: new URL(
@@ -26,6 +26,33 @@ const ASSET = {
   ).href,
   snow: new URL(
     '../../assets/weather-amcharts/static/snowy-6.svg',
+    import.meta.url,
+  ).href,
+}
+
+const ANIMATED_ASSET = {
+  sunny: new URL(
+    '../../assets/weather-amcharts/animated/day.svg',
+    import.meta.url,
+  ).href,
+  clear_night: new URL(
+    '../../assets/weather-amcharts/animated/night.svg',
+    import.meta.url,
+  ).href,
+  cloudy: new URL(
+    '../../assets/weather-amcharts/animated/cloudy.svg',
+    import.meta.url,
+  ).href,
+  rainy: new URL(
+    '../../assets/weather-amcharts/animated/rainy-6.svg',
+    import.meta.url,
+  ).href,
+  thunderstorm: new URL(
+    '../../assets/weather-amcharts/animated/thunder.svg',
+    import.meta.url,
+  ).href,
+  snow: new URL(
+    '../../assets/weather-amcharts/animated/snowy-6.svg',
     import.meta.url,
   ).href,
 }
@@ -174,14 +201,42 @@ const INNER = {
   clear_night: ClearNightInner,
 }
 
-export default function WeatherGlyph({ variant }) {
-  const assetUrl = ASSET[variant]
+export default function WeatherGlyph({ variant, animateMs = 5000 }) {
+  const staticUrl = STATIC_ASSET[variant]
+  const animatedUrl = ANIMATED_ASSET[variant]
   const Cmp = INNER[variant] ?? INNER.sunny
+  const [showAnimated, setShowAnimated] = useState(false)
+  const lastVariantRef = useRef(variant)
+
+  useEffect(() => {
+    const prefersReduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
+    if (prefersReduced) return
+    if (!animatedUrl || !staticUrl) return
+
+    const changed = lastVariantRef.current !== variant
+    lastVariantRef.current = variant
+
+    // Animate on first mount and on variant change.
+    if (!changed && showAnimated) return
+    setShowAnimated(true)
+    const id = window.setTimeout(() => setShowAnimated(false), animateMs)
+    return () => window.clearTimeout(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [variant, animatedUrl, staticUrl, animateMs])
+
+  const assetUrl = showAnimated ? animatedUrl : staticUrl
 
   return (
     <span className="weather-glyph" aria-hidden>
       {assetUrl ? (
-        <img className="weather-glyph__img" src={assetUrl} alt="" />
+        <img
+          className="weather-glyph__img"
+          src={assetUrl}
+          alt=""
+          onError={() => setShowAnimated(false)}
+        />
       ) : (
         <svg
           className="weather-glyph__svg"
