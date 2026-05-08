@@ -280,12 +280,27 @@ export function useMedical(baseUrl, { intervalMs = 20000, deviceId = '' } = {}) 
       }
     }
 
+    const forceRefresh = () => {
+      if (!alive) return
+      void tick()
+    }
+
     tick()
     const id = window.setInterval(tick, intervalMs)
+
+    const onOnline = () => forceRefresh()
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') forceRefresh()
+    }
+    window.addEventListener('online', onOnline)
+    document.addEventListener('visibilitychange', onVisibility)
+
     return () => {
       alive = false
       controller.abort()
       window.clearInterval(id)
+      window.removeEventListener('online', onOnline)
+      document.removeEventListener('visibilitychange', onVisibility)
     }
   }, [baseUrl, intervalMs, deviceId])
 
