@@ -113,8 +113,8 @@ function StepsIntradayChart({ rows, dayStartMs, dayEndMs, height = 160 }) {
 
   const w = 640
   const h = height
-  const padL = 44
-  const padR = 10
+  const padL = 14
+  const padR = 14
   const padT = 10
   const padB = 26
   const spanT = dayEndMs - dayStartMs || 1
@@ -136,7 +136,14 @@ function StepsIntradayChart({ rows, dayStartMs, dayEndMs, height = 160 }) {
   const gid = `steps-${uid}`
 
   return (
-    <svg className="linechart" viewBox={`0 0 ${w} ${h}`} width="100%" height={h} aria-hidden>
+    <svg
+      className="linechart"
+      viewBox={`0 0 ${w} ${h}`}
+      width="100%"
+      height={h}
+      preserveAspectRatio="none"
+      aria-hidden
+    >
       <defs>
         <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#34d399" stopOpacity="0.45" />
@@ -255,6 +262,7 @@ function LineChart({
       viewBox={`0 0 ${w} ${h}`}
       width="100%"
       height={h}
+      preserveAspectRatio="none"
       aria-hidden
     >
       <defs>
@@ -430,9 +438,12 @@ function vo2Category(v) {
 }
 
 function Donut({ value, total, color = '#34d399', label }) {
-  const v = Math.max(0, Number(value) || 0)
-  const t = Math.max(1, Number(total) || 1)
-  const p = Math.max(0, Math.min(1, v / t))
+  const vRaw = Number(value)
+  const tRaw = Number(total)
+  const known = Number.isFinite(vRaw) && Number.isFinite(tRaw) && tRaw > 0
+  const v = known ? Math.max(0, vRaw) : 0
+  const t = known ? tRaw : 1
+  const p = known ? Math.max(0, Math.min(1, v / t)) : 0
   const r = 18
   const c = 2 * Math.PI * r
   const dash = `${(c * p).toFixed(2)} ${(c * (1 - p)).toFixed(2)}`
@@ -454,7 +465,7 @@ function Donut({ value, total, color = '#34d399', label }) {
       </svg>
       <div className="donut__txt">
         <div className="donut__label">{label}</div>
-        <div className="donut__v">{Math.round(p * 100)}%</div>
+        <div className="donut__v">{known ? `${Math.round(p * 100)}%` : '—'}</div>
       </div>
     </div>
   )
@@ -513,6 +524,11 @@ export default function MedicalScreen({ medical }) {
     todayAgg?.kcal ??
     todayAgg?.calories ??
     d?.calories ??
+    null
+  const activeKcal =
+    todayAgg?.activeCaloriesKcal ??
+    todayAgg?.active_kcal ??
+    todayAgg?.activeCalories ??
     null
   const ach = caloriesAchievement(kcalToday)
   return (
@@ -599,14 +615,14 @@ export default function MedicalScreen({ medical }) {
             detail={
               <div className="salute-calories-detail">
                 <Donut
-                  value={todayAgg?.activeCaloriesKcal ?? 0}
-                  total={todayAgg?.caloriesKcal ?? d?.calories ?? 0}
+                  value={activeKcal}
+                  total={kcalToday}
                   color="#34d399"
                   label="Attive"
                 />
                 <div className="salute-calories-detail__meta">
                   <div>Totali {todayAgg?.caloriesKcal != null ? Math.round(todayAgg.caloriesKcal) : fmtInt(d?.calories)}</div>
-                  <div>Attive {todayAgg?.activeCaloriesKcal != null ? Math.round(todayAgg.activeCaloriesKcal) : '—'}</div>
+                  <div>Attive {activeKcal != null ? Math.round(activeKcal) : '—'}</div>
                   {ach ? (
                     <div className="salute-ach">
                       <span className="salute-ach__ic" aria-hidden>
