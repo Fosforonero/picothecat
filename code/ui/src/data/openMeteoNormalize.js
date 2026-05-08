@@ -96,7 +96,14 @@ function formatForecastDayLabel(dateStr, index) {
     day: 'numeric',
     month: 'long',
   })
-  return index === 0 ? `Oggi ${long}` : long
+  if (index === 0) return `Oggi, ${long}`
+
+  // Giorni successivi: solo abbreviazione (sab, dom, lun…)
+  const shortDay = d
+    .toLocaleDateString('it-IT', { weekday: 'short' })
+    .replace('.', '')
+    .toLowerCase()
+  return shortDay
 }
 
 /**

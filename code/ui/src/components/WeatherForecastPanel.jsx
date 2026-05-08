@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import WeatherGlyph from './weather/WeatherGlyph.jsx'
 import HumidityDrop from './weather/HumidityDrop.jsx'
@@ -33,6 +33,8 @@ export default function WeatherForecastPanel({
   alert = null,
   status = 'ready',
 }) {
+  const stripRef = useRef(null)
+
   useEffect(() => {
     if (!open) return undefined
     const onKey = (e) => {
@@ -41,6 +43,38 @@ export default function WeatherForecastPanel({
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [open, onClose])
+
+  useEffect(() => {
+    if (!open) return
+    if (!hourlyToday?.length) return
+    const strip = stripRef.current
+    if (!strip) return
+
+    // Scroll iniziale: mostra l’ora corrente (es. 10:15 → card 10:00).
+    const now = new Date()
+    const h = now.getHours()
+    let idx = hourlyToday.findIndex((x) => {
+      const d = new Date(String(x.time))
+      return Number.isFinite(d.getTime()) && d.getHours() === h
+    })
+    if (idx < 0) {
+      idx = hourlyToday.findIndex((x) => {
+        const ms = new Date(String(x.time)).getTime()
+        return Number.isFinite(ms) && ms >= now.getTime()
+      })
+    }
+    if (idx < 0) idx = 0
+
+    const run = () => {
+      const items = strip.querySelectorAll?.('.weather-forecast-hour')
+      const el = items?.[idx]
+      if (el?.offsetLeft != null) {
+        strip.scrollLeft = Math.max(0, el.offsetLeft - 8)
+      }
+    }
+    const id = window.requestAnimationFrame(run)
+    return () => window.cancelAnimationFrame(id)
+  }, [open, hourlyToday])
 
   if (!open) return null
 
@@ -117,7 +151,12 @@ export default function WeatherForecastPanel({
                 </div>
               </div>
 
-              <div className="weather-forecast-todaycard__strip" role="list" aria-label="Oggi: previsioni orarie">
+              <div
+                ref={stripRef}
+                className="weather-forecast-todaycard__strip"
+                role="list"
+                aria-label="Oggi: previsioni orarie"
+              >
                 {hourlyToday.map((h) => (
                   <div
                     key={h.time}
