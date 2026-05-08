@@ -185,6 +185,7 @@ export function useMedical(baseUrl, { intervalMs = 20000, deviceId = '' } = {}) 
         lastHttpStatus: null,
         weekly: [],
         recent: [],
+        today: [],
       }
     }
     return {
@@ -196,6 +197,7 @@ export function useMedical(baseUrl, { intervalMs = 20000, deviceId = '' } = {}) 
       lastHttpStatus: null,
       weekly: [],
       recent: [],
+      today: [],
     }
   })
 
@@ -206,6 +208,7 @@ export function useMedical(baseUrl, { intervalMs = 20000, deviceId = '' } = {}) 
     const qs = deviceId ? `?deviceId=${encodeURIComponent(String(deviceId))}` : ''
     const urlLatest = base ? `${base}/api/v1/sync/latest${qs}` : null
     const urlWeekly = base ? `${base}/api/v1/sync/weekly${qs}` : null
+    const urlToday = base ? `${base}/api/v1/sync/today${qs}` : null
     const urlRecent = base
       ? `${base}/api/v1/sync/recent?limit=48${deviceId ? `&deviceId=${encodeURIComponent(String(deviceId))}` : ''}`
       : null
@@ -216,10 +219,13 @@ export function useMedical(baseUrl, { intervalMs = 20000, deviceId = '' } = {}) 
       try {
         if (!urlLatest) throw new Error('Missing base url')
 
-        const [latestRes, weeklyRes, recentRes] = await Promise.all([
+        const [latestRes, weeklyRes, todayRes, recentRes] = await Promise.all([
           fetch(urlLatest, { signal: controller.signal, cache: 'no-store' }),
           urlWeekly
             ? fetch(urlWeekly, { signal: controller.signal, cache: 'no-store' })
+            : Promise.resolve(null),
+          urlToday
+            ? fetch(urlToday, { signal: controller.signal, cache: 'no-store' })
             : Promise.resolve(null),
           urlRecent
             ? fetch(urlRecent, { signal: controller.signal, cache: 'no-store' })
@@ -234,6 +240,17 @@ export function useMedical(baseUrl, { intervalMs = 20000, deviceId = '' } = {}) 
         if (weeklyRes && weeklyRes.ok) {
           const j = await weeklyRes.json()
           weekly = Array.isArray(j?.days) ? j.days : []
+        }
+        let today = []
+        if (todayRes && todayRes.ok) {
+          const j = await todayRes.json()
+          today = Array.isArray(j?.records)
+            ? j.records
+            : Array.isArray(j?.data?.records)
+              ? j.data.records
+              : Array.isArray(j?.items)
+                ? j.items
+                : []
         }
         let recent = []
         if (recentRes && recentRes.ok) {
@@ -266,6 +283,7 @@ export function useMedical(baseUrl, { intervalMs = 20000, deviceId = '' } = {}) 
             lastHttpStatus: latestRes.status,
             weekly,
             recent,
+            today,
           }
         })
         saveCache({ ts: Date.now(), data })

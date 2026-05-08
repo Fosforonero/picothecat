@@ -1,4 +1,4 @@
-import { useId, useMemo, useState } from 'react'
+import { useId } from 'react'
 import StatusCard from './StatusCard.jsx'
 
 function fmt(v, suffix = '') {
@@ -88,6 +88,8 @@ function LineChart({
   dot = true,
   grid = true,
   unit = '',
+  domainStart,
+  domainEnd,
 }) {
   const uid = useId()
   const raw = Array.isArray(points) ? points : []
@@ -103,8 +105,12 @@ function LineChart({
     .sort((a, b) => a.t - b.t)
     .filter((p, i, arr) => i === 0 || p.t !== arr[i - 1].t)
 
-  const minT = Math.min(...sorted.map((p) => p.t))
-  const maxT = Math.max(...sorted.map((p) => p.t))
+  const minT = Number.isFinite(Number(domainStart))
+    ? Number(domainStart)
+    : Math.min(...sorted.map((p) => p.t))
+  const maxT = Number.isFinite(Number(domainEnd))
+    ? Number(domainEnd)
+    : Math.max(...sorted.map((p) => p.t))
   const minV = Math.min(...sorted.map((p) => p.v))
   const maxV = Math.max(...sorted.map((p) => p.v))
 
@@ -206,10 +212,17 @@ function LineChart({
   )
 }
 
-function MetricDetail({ points, stroke, caption, height, unit }) {
+function MetricDetail({ points, stroke, caption, height, unit, domainStart, domainEnd }) {
   return (
     <div className="status-card__spark">
-      <LineChart points={points} stroke={stroke} height={height} unit={unit} />
+      <LineChart
+        points={points}
+        stroke={stroke}
+        height={height}
+        unit={unit}
+        domainStart={domainStart}
+        domainEnd={domainEnd}
+      />
       {caption ? <div className="status-card__spark-caption">{caption}</div> : null}
     </div>
   )
@@ -342,28 +355,34 @@ function Donut({ value, total, color = '#34d399', label }) {
 export default function MedicalScreen({ medical }) {
   const d = medical?.data ?? null
   const status = medical?.status ?? 'loading'
-  const history = medical?.history ?? []
   const weekly = medical?.weekly ?? []
   const recent = medical?.recent ?? []
+  const today = medical?.today ?? []
 
-  const [rangeHours, setRangeHours] = useState(24)
+  const baseTsMs = d?.ts ? new Date(String(d.ts)).getTime() : Number.NaN
+  const baseDay = Number.isFinite(baseTsMs) ? new Date(baseTsMs) : new Date()
+  const dayStartMs = new Date(
+    baseDay.getFullYear(),
+    baseDay.getMonth(),
+    baseDay.getDate(),
+    0,
+    0,
+    0,
+    0,
+  ).getTime()
+  const dayEndMs = dayStartMs + 24 * 60 * 60 * 1000 - 1
 
-  const nowMs = d?.ts ? new Date(String(d.ts)).getTime() : Number.NaN
-  const rangeStartMs = useMemo(() => {
-    const h = Number(rangeHours)
-    if (!Number.isFinite(nowMs) || !Number.isFinite(h) || h <= 0) return null
-    return nowMs - h * 60 * 60 * 1000
-  }, [rangeHours, nowMs])
+  const inDay = (t) => Number.isFinite(t) && t >= dayStartMs && t <= dayEndMs
 
-  const series = (key) =>
-    history
-      .map((h) => ({ t: h?.t, v: h?.[key] }))
-      .filter((p) => p.t != null && p.v != null)
-
-  const filterRange = (pts) => {
-    if (!rangeStartMs) return pts
-    return pts.filter((p) => Number(p.t) >= rangeStartMs)
+  const tsOf = (r) => {
+    const t = new Date(r?.receivedAt || r?.collectedAtMillis || 0).getTime()
+    return Number.isFinite(t) ? t : null
   }
+
+  const seriesFrom = (rows, pickV) =>
+    (Array.isArray(rows) ? rows : [])
+      .map((r) => ({ t: tsOf(r), v: pickV(r) }))
+      .filter((p) => p.t != null && p.v != null && Number.isFinite(Number(p.v)) && inDay(p.t))
 
   const todayISO = new Date().toISOString().slice(0, 10)
   const todayAgg = weekly.find((x) => x?.day === todayISO) ?? null
@@ -384,28 +403,6 @@ export default function MedicalScreen({ medical }) {
                 : 'Oggi'}
         </div>
       </div>
-
-      <div className="medical-screen__range" role="group" aria-label="Intervallo grafici">
-        {[
-          { h: 24, label: '24h' },
-          { h: 12, label: '12h' },
-          { h: 6, label: '6h' },
-          { h: 1, label: '1h' },
-        ].map((r) => (
-          <button
-            key={r.h}
-            type="button"
-            className={
-              rangeHours === r.h
-                ? 'range-chip range-chip--active'
-                : 'range-chip'
-            }
-            onClick={() => setRangeHours(r.h)}
-          >
-            {r.label}
-          </button>
-        ))}
-      </div>
       <div className="medical-screen__grid">
         <div className="medical-screen__cell medical-screen__cell--steps">
           <StatusCard
@@ -414,10 +411,12 @@ export default function MedicalScreen({ medical }) {
             detail={
               status === 'ready' ? (
                 <MetricDetail
-                  points={filterRange(series('steps'))}
+                  points={seriesFrom(today, (r) => r?.steps ?? r?.stepCount ?? r?.stepsCount)}
                   stroke="rgba(96,165,250,0.95)"
                   caption="Oggi"
                   height={150}
+                  domainStart={dayStartMs}
+                  domainEnd={dayEndMs}
                 />
               ) : (
                 ''
@@ -440,18 +439,13 @@ export default function MedicalScreen({ medical }) {
                     <span>max {hrStats?.max != null ? Math.round(hrStats.max) : '—'}</span>
                   </div>
                   <MetricDetail
-                    points={filterRange(
-                      recent
-                        .map((r) => ({
-                          t: new Date(r.receivedAt || r.collectedAtMillis || 0).getTime(),
-                          v: r.heartRateBpm,
-                        }))
-                        .filter((p) => Number.isFinite(p.t) && Number.isFinite(Number(p.v))),
-                    )}
+                    points={seriesFrom(recent.length ? recent : today, (r) => r?.heartRateBpm ?? r?.bpm ?? r?.heartRate)}
                     stroke="rgba(255,92,92,0.95)"
                     caption="Oggi"
                     height={120}
                     unit=" bpm"
+                    domainStart={dayStartMs}
+                    domainEnd={dayEndMs}
                   />
                 </div>
               ) : (
@@ -474,11 +468,13 @@ export default function MedicalScreen({ medical }) {
             detail={
               status === 'ready' ? (
                 <MetricDetail
-                  points={filterRange(series('distanceMeters'))}
+                  points={seriesFrom(today, (r) => r?.distanceMeters ?? r?.distance_m ?? r?.distance)}
                   stroke="rgba(120,210,255,0.95)"
                   caption="Trend"
                   height={120}
                   unit=" m"
+                  domainStart={dayStartMs}
+                  domainEnd={dayEndMs}
                 />
               ) : (
                 ''
