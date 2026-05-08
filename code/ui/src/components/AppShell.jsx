@@ -4,6 +4,8 @@ import { useClock } from '../hooks/useClock.js'
 import { useThemeMode } from '../hooks/useThemeMode.js'
 import {
   getBackendBaseUrl,
+  getHealthSyncBaseUrl,
+  getHealthSyncDeviceId,
   HEALTH_POLL_INTERVAL_MS,
   IDLE_TIMEOUT_MS,
   DEEP_IDLE_TIMEOUT_MS,
@@ -39,7 +41,9 @@ export default function AppShell() {
   const health = useHealth(backendBase, {
     intervalMs: HEALTH_POLL_INTERVAL_MS,
   })
-  const medical = useMedical(backendBase)
+  const healthSyncBase = getHealthSyncBaseUrl()
+  const deviceId = getHealthSyncDeviceId()
+  const medical = useMedical(healthSyncBase, { deviceId })
 
   const [phase, setPhase] = useState(UI_PHASE.IDLE)
   const blockInputUntilRef = useRef(0)

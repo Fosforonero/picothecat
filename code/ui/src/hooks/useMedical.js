@@ -81,9 +81,18 @@ function pickStages(obj, keys) {
 }
 
 function normalizeMedical(json) {
-  const bpm = pickNumber(json, ['bpm', 'heartRate', 'hr'])
-  const steps = pickNumber(json, ['steps', 'stepCount'])
-  const calories = pickNumber(json, [
+  // Supporta anche payload incapsulati (es. { data: {...} } o { latest: {...} }).
+  const root =
+    json && typeof json === 'object'
+      ? json.data && typeof json.data === 'object'
+        ? json.data
+        : json.latest && typeof json.latest === 'object'
+          ? json.latest
+          : json
+      : json
+  const bpm = pickNumber(root, ['bpm', 'heartRate', 'hr'])
+  const steps = pickNumber(root, ['steps', 'stepCount'])
+  const calories = pickNumber(root, [
     'calories',
     'kcal',
     'kcalBurned',
@@ -92,27 +101,27 @@ function normalizeMedical(json) {
     'active_kcal',
     'caloriesBurned',
   ])
-  const sleepMinutes = pickNumber(json, ['sleepMinutes', 'sleep_min', 'sleep'])
-  const sleepStages = pickStages(json, [
+  const sleepMinutes = pickNumber(root, ['sleepMinutes', 'sleep_min', 'sleep'])
+  const sleepStages = pickStages(root, [
     'sleepStages',
     'sleep_stages',
     'sleepPhases',
     'sleep_phases',
     'stages',
   ])
-  const distanceMeters = pickNumber(json, [
+  const distanceMeters = pickNumber(root, [
     'distanceMeters',
     'distance_m',
     'distance',
   ])
-  const bodyTempC = pickNumber(json, [
+  const bodyTempC = pickNumber(root, [
     'bodyTempC',
     'body_temp_c',
     'temperatureC',
     'tempC',
   ])
-  const spo2 = pickNumber(json, ['spo2', 'SpO2'])
-  const ts = json?.ts != null ? String(json.ts) : null
+  const spo2 = pickNumber(root, ['spo2', 'SpO2'])
+  const ts = root?.ts != null ? String(root.ts) : null
 
   return {
     ts,
@@ -128,7 +137,7 @@ function normalizeMedical(json) {
   }
 }
 
-export function useMedical(baseUrl, { intervalMs = 20000 } = {}) {
+export function useMedical(baseUrl, { intervalMs = 20000, deviceId = '' } = {}) {
   const [state, setState] = useState(() => {
     const cached = loadCache()
     const history = loadHistory()
@@ -155,17 +164,11 @@ export function useMedical(baseUrl, { intervalMs = 20000 } = {}) {
   useEffect(() => {
     let alive = true
     const controller = new AbortController()
-    const base =
-      baseUrl === ''
-        ? import.meta.env?.DEV
-          ? ''
-          : 'http://127.0.0.1:8787'
-        : baseUrl.replace(/\/$/, '')
+    const base = baseUrl ? baseUrl.replace(/\/$/, '') : ''
+    const qs = deviceId ? `?deviceId=${encodeURIComponent(String(deviceId))}` : ''
     const candidates = [
-      base ? `${base}/api/medical` : null,
-      base ? `${base}/api/medical/latest` : null,
-      '/api/medical',
-      '/api/medical/latest',
+      base ? `${base}/api/v1/sync/latest${qs}` : null,
+      base ? `${base}/api/v1/sync/today${qs}` : null,
     ].filter(Boolean)
 
     const tick = async () => {
@@ -245,7 +248,7 @@ export function useMedical(baseUrl, { intervalMs = 20000 } = {}) {
       controller.abort()
       window.clearInterval(id)
     }
-  }, [baseUrl, intervalMs])
+  }, [baseUrl, intervalMs, deviceId])
 
   return state
 }

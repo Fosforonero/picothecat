@@ -80,6 +80,28 @@ export function getBackendBaseUrl() {
   return String(raw).replace(/\/$/, '')
 }
 
+/**
+ * Base URL per Health Sync VPS (salute).
+ * @returns {string}
+ */
+export function getHealthSyncBaseUrl() {
+  const raw = import.meta.env.VITE_HEALTHSYNC_BASE
+  if (raw != null && String(raw).trim() !== '') {
+    return String(raw).replace(/\/$/, '')
+  }
+  return 'http://51.178.43.134:3000'
+}
+
+/**
+ * DeviceId Health Sync (salute). Se non impostato → mostra ultimo globale (sconsigliato con più dispositivi).
+ * @returns {string}
+ */
+export function getHealthSyncDeviceId() {
+  const raw = import.meta.env.VITE_HEALTHSYNC_DEVICE_ID
+  if (raw != null && String(raw).trim() !== '') return String(raw).trim()
+  return 'f41f0ac3-061e-43f4-87e8-07385de9a97a'
+}
+
 export function parseTimeToMinutes(str) {
   const parts = String(str).trim().split(':')
   const h = Number(parts[0])
