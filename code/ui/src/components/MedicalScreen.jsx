@@ -1,4 +1,4 @@
-import { useId } from 'react'
+import { useId, useMemo, useState } from 'react'
 import StatusCard from './StatusCard.jsx'
 
 function fmt(v, suffix = '') {
@@ -346,10 +346,24 @@ export default function MedicalScreen({ medical }) {
   const weekly = medical?.weekly ?? []
   const recent = medical?.recent ?? []
 
+  const [rangeHours, setRangeHours] = useState(24)
+
+  const nowMs = d?.ts ? new Date(String(d.ts)).getTime() : Number.NaN
+  const rangeStartMs = useMemo(() => {
+    const h = Number(rangeHours)
+    if (!Number.isFinite(nowMs) || !Number.isFinite(h) || h <= 0) return null
+    return nowMs - h * 60 * 60 * 1000
+  }, [rangeHours, nowMs])
+
   const series = (key) =>
     history
       .map((h) => ({ t: h?.t, v: h?.[key] }))
       .filter((p) => p.t != null && p.v != null)
+
+  const filterRange = (pts) => {
+    if (!rangeStartMs) return pts
+    return pts.filter((p) => Number(p.t) >= rangeStartMs)
+  }
 
   const todayISO = new Date().toISOString().slice(0, 10)
   const todayAgg = weekly.find((x) => x?.day === todayISO) ?? null
@@ -370,6 +384,28 @@ export default function MedicalScreen({ medical }) {
                 : 'Oggi'}
         </div>
       </div>
+
+      <div className="medical-screen__range" role="group" aria-label="Intervallo grafici">
+        {[
+          { h: 24, label: '24h' },
+          { h: 12, label: '12h' },
+          { h: 6, label: '6h' },
+          { h: 1, label: '1h' },
+        ].map((r) => (
+          <button
+            key={r.h}
+            type="button"
+            className={
+              rangeHours === r.h
+                ? 'range-chip range-chip--active'
+                : 'range-chip'
+            }
+            onClick={() => setRangeHours(r.h)}
+          >
+            {r.label}
+          </button>
+        ))}
+      </div>
       <div className="medical-screen__grid">
         <div className="medical-screen__cell medical-screen__cell--steps">
           <StatusCard
@@ -378,7 +414,7 @@ export default function MedicalScreen({ medical }) {
             detail={
               status === 'ready' ? (
                 <MetricDetail
-                  points={series('steps')}
+                  points={filterRange(series('steps'))}
                   stroke="rgba(96,165,250,0.95)"
                   caption="Oggi"
                   height={150}
@@ -404,7 +440,14 @@ export default function MedicalScreen({ medical }) {
                     <span>max {hrStats?.max != null ? Math.round(hrStats.max) : '—'}</span>
                   </div>
                   <MetricDetail
-                    points={recent.map((r) => ({ t: new Date(r.receivedAt || r.collectedAtMillis || 0).getTime(), v: r.heartRateBpm })).filter((p) => Number.isFinite(p.t) && Number.isFinite(Number(p.v)))}
+                    points={filterRange(
+                      recent
+                        .map((r) => ({
+                          t: new Date(r.receivedAt || r.collectedAtMillis || 0).getTime(),
+                          v: r.heartRateBpm,
+                        }))
+                        .filter((p) => Number.isFinite(p.t) && Number.isFinite(Number(p.v))),
+                    )}
                     stroke="rgba(255,92,92,0.95)"
                     caption="Oggi"
                     height={120}
@@ -431,7 +474,7 @@ export default function MedicalScreen({ medical }) {
             detail={
               status === 'ready' ? (
                 <MetricDetail
-                  points={series('distanceMeters')}
+                  points={filterRange(series('distanceMeters'))}
                   stroke="rgba(120,210,255,0.95)"
                   caption="Trend"
                   height={120}

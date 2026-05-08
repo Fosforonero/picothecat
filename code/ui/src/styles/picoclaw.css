@@ -1720,6 +1720,34 @@ html[data-theme='dark'] .indoor-climate-card--mode-dehumid {
   letter-spacing: 0.01em;
 }
 
+.medical-screen__range {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.range-chip {
+  min-height: 46px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  background: color-mix(in srgb, var(--surface) 72%, var(--bg));
+  color: var(--text);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  cursor: none;
+}
+
+.range-chip:active {
+  transform: scale(0.98);
+  filter: brightness(1.05);
+}
+
+.range-chip--active {
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+}
+
 .medical-screen__grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
