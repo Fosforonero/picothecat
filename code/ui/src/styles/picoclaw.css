@@ -1733,6 +1733,16 @@ html[data-theme='dark'] .indoor-climate-card--mode-dehumid {
     'distance calories';
 }
 
+.medical-screen__cell {
+  display: flex;
+  min-width: 0;
+}
+
+.medical-screen__cell > .status-card {
+  width: 100%;
+  height: 100%;
+}
+
 .medical-screen__cell--steps {
   grid-area: steps;
 }

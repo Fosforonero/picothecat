@@ -48,10 +48,16 @@ function LineChart({
     .slice(-96)
   if (ptsRaw.length < 2) return null
 
-  const minT = Math.min(...ptsRaw.map((p) => p.t))
-  const maxT = Math.max(...ptsRaw.map((p) => p.t))
-  const minV = Math.min(...ptsRaw.map((p) => p.v))
-  const maxV = Math.max(...ptsRaw.map((p) => p.v))
+  // Ordina e deduplica per timestamp (evita path “indietro” che sembra discontinuo).
+  const sorted = ptsRaw
+    .slice()
+    .sort((a, b) => a.t - b.t)
+    .filter((p, i, arr) => i === 0 || p.t !== arr[i - 1].t)
+
+  const minT = Math.min(...sorted.map((p) => p.t))
+  const maxT = Math.max(...sorted.map((p) => p.t))
+  const minV = Math.min(...sorted.map((p) => p.v))
+  const maxV = Math.max(...sorted.map((p) => p.v))
 
   const w = 640
   const h = height
@@ -62,7 +68,7 @@ function LineChart({
   const spanT = maxT - minT || 1
   const spanV = maxV - minV || 1
 
-  const pts = ptsRaw.map((p) => {
+  const pts = sorted.map((p) => {
     const x = ((p.t - minT) / spanT) * (w - padL - padR) + padL
     const yy = h - padB - ((p.v - minV) / spanV) * (h - padT - padB)
     return [x, yy]
