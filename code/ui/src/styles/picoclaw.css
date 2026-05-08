@@ -1909,6 +1909,27 @@ html[data-theme='dark'] .indoor-climate-card--mode-dehumid {
   align-items: center;
 }
 
+.salute-ach {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.salute-ach__ic {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.salute-ach__txt {
+  color: color-mix(in srgb, var(--text) 88%, transparent);
+}
+
 .donut {
   display: flex;
   align-items: center;

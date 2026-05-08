@@ -460,6 +460,19 @@ function Donut({ value, total, color = '#34d399', label }) {
   )
 }
 
+function caloriesAchievement(kcal) {
+  const n = Number(kcal)
+  if (!Number.isFinite(n)) return null
+  if (n < 150) return { icon: '💧', label: 'Acqua e buona volontà' }
+  if (n < 300) return { icon: '☕', label: 'Caffè (amaro)' }
+  if (n < 450) return { icon: '☕🥐', label: 'Cornetto e cappuccino' }
+  if (n < 600) return { icon: '🥐', label: 'Brioche con la crema' }
+  if (n < 800) return { icon: '🍝', label: 'Carbonara' }
+  if (n < 1100) return { icon: '🍕', label: 'Pizza Margherita' }
+  if (n < 1400) return { icon: '🥩', label: 'Bistecca alla fiorentina' }
+  return { icon: '🏆', label: 'Lasagna intera + tiramisù' }
+}
+
 export default function MedicalScreen({ medical }) {
   const d = medical?.data ?? null
   const status = medical?.status ?? 'loading'
@@ -492,11 +505,16 @@ export default function MedicalScreen({ medical }) {
       .map((r) => ({ t: tsOf(r), v: pickV(r) }))
       .filter((p) => p.t != null && p.v != null && Number.isFinite(Number(p.v)) && inDay(p.t))
 
-  const caloriesSeries = seriesFrom(today, (r) => r?.caloriesKcal ?? r?.calories ?? r?.caloriesTotalKcal ?? r?.kcal)
-
   const todayISO = new Date().toISOString().slice(0, 10)
   const todayAgg = weekly.find((x) => x?.day === todayISO) ?? null
   const hrStats = todayAgg?.heartRateBpm ?? null
+  const kcalToday =
+    todayAgg?.caloriesKcal ??
+    todayAgg?.kcal ??
+    todayAgg?.calories ??
+    d?.calories ??
+    null
+  const ach = caloriesAchievement(kcalToday)
   return (
     <div className="medical-screen">
       <div className="medical-screen__head">
@@ -571,27 +589,13 @@ export default function MedicalScreen({ medical }) {
           <StatusCard
             title="Distanza"
             value={d ? fmtKm(d.distanceMeters) : '—'}
-            detail={
-              status === 'ready' ? (
-                <MetricDetail
-                  points={seriesFrom(today, (r) => r?.distanceMeters ?? r?.distance_m ?? r?.distance)}
-                  stroke="rgba(120,210,255,0.95)"
-                  caption="Trend"
-                  height={120}
-                  unit=" m"
-                  domainStart={dayStartMs}
-                  domainEnd={dayEndMs}
-                />
-              ) : (
-                ''
-              )
-            }
+            detail=""
           />
         </div>
         <div className="medical-screen__cell medical-screen__cell--calories">
           <StatusCard
             title="Calorie"
-            value={d ? fmt(d.calories, ' kcal') : '—'}
+            value={kcalToday != null ? fmt(kcalToday, ' kcal') : '—'}
             detail={
               <div className="salute-calories-detail">
                 <Donut
@@ -603,19 +607,15 @@ export default function MedicalScreen({ medical }) {
                 <div className="salute-calories-detail__meta">
                   <div>Totali {todayAgg?.caloriesKcal != null ? Math.round(todayAgg.caloriesKcal) : fmtInt(d?.calories)}</div>
                   <div>Attive {todayAgg?.activeCaloriesKcal != null ? Math.round(todayAgg.activeCaloriesKcal) : '—'}</div>
-                  {d?.unlock ? <div>{d.unlock}</div> : null}
+                  {ach ? (
+                    <div className="salute-ach">
+                      <span className="salute-ach__ic" aria-hidden>
+                        {ach.icon}
+                      </span>
+                      <span className="salute-ach__txt">{ach.label}</span>
+                    </div>
+                  ) : null}
                 </div>
-                {status === 'ready' ? (
-                  <MetricDetail
-                    points={caloriesSeries}
-                    stroke="rgba(52,211,153,0.95)"
-                    caption="Oggi · calorie cumulative"
-                    height={140}
-                    unit=" kcal"
-                    domainStart={dayStartMs}
-                    domainEnd={dayEndMs}
-                  />
-                ) : null}
               </div>
             }
           />
