@@ -12,20 +12,69 @@ function fmtTimeHM(ms) {
   return d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
 }
 
-function linePath(points) {
-  if (points.length < 2) return ''
-  const out = [`M${points[0][0].toFixed(2)},${points[0][1].toFixed(2)}`]
-  for (let i = 0; i < points.length - 1; i++) {
-    const p0 = points[i - 1] ?? points[i]
-    const p1 = points[i]
-    const p2 = points[i + 1]
-    const p3 = points[i + 2] ?? p2
-    const c1x = p1[0] + (p2[0] - p0[0]) / 6
-    const c1y = p1[1] + (p2[1] - p0[1]) / 6
-    const c2x = p2[0] - (p3[0] - p1[0]) / 6
-    const c2y = p2[1] - (p3[1] - p1[1]) / 6
+/**
+ * Monotone cubic spline path (Fritsch-Carlson).
+ * Evita overshoot/loop che “spaccano” la curva con pochi punti o gap.
+ * @param {Array<[number, number]>} pts
+ */
+function linePath(pts) {
+  if (pts.length < 2) return ''
+  const n = pts.length
+  const xs = pts.map((p) => p[0])
+  const ys = pts.map((p) => p[1])
+
+  const dx = new Array(n - 1)
+  const dy = new Array(n - 1)
+  const m = new Array(n - 1)
+  for (let i = 0; i < n - 1; i += 1) {
+    dx[i] = xs[i + 1] - xs[i]
+    dy[i] = ys[i + 1] - ys[i]
+    m[i] = dx[i] !== 0 ? dy[i] / dx[i] : 0
+  }
+
+  const t = new Array(n)
+  t[0] = m[0]
+  t[n - 1] = m[n - 2]
+  for (let i = 1; i < n - 1; i += 1) {
+    if (m[i - 1] * m[i] <= 0) {
+      t[i] = 0
+    } else {
+      const w1 = 2 * dx[i] + dx[i - 1]
+      const w2 = dx[i] + 2 * dx[i - 1]
+      t[i] = (w1 + w2) / (w1 / m[i - 1] + w2 / m[i])
+    }
+  }
+
+  // Clamp tangents to prevent overshoot.
+  for (let i = 0; i < n - 1; i += 1) {
+    if (m[i] === 0) {
+      t[i] = 0
+      t[i + 1] = 0
+      continue
+    }
+    const a = t[i] / m[i]
+    const b = t[i + 1] / m[i]
+    const s = a * a + b * b
+    if (s > 9) {
+      const scale = 3 / Math.sqrt(s)
+      t[i] = scale * a * m[i]
+      t[i + 1] = scale * b * m[i]
+    }
+  }
+
+  const out = [`M${xs[0].toFixed(2)},${ys[0].toFixed(2)}`]
+  for (let i = 0; i < n - 1; i += 1) {
+    const x0 = xs[i]
+    const y0 = ys[i]
+    const x1 = xs[i + 1]
+    const y1 = ys[i + 1]
+    const h = x1 - x0 || 1
+    const c1x = x0 + h / 3
+    const c1y = y0 + (t[i] * h) / 3
+    const c2x = x1 - h / 3
+    const c2y = y1 - (t[i + 1] * h) / 3
     out.push(
-      `C${c1x.toFixed(2)},${c1y.toFixed(2)} ${c2x.toFixed(2)},${c2y.toFixed(2)} ${p2[0].toFixed(2)},${p2[1].toFixed(2)}`,
+      `C${c1x.toFixed(2)},${c1y.toFixed(2)} ${c2x.toFixed(2)},${c2y.toFixed(2)} ${x1.toFixed(2)},${y1.toFixed(2)}`,
     )
   }
   return out.join(' ')
