@@ -259,7 +259,7 @@ export default function MedicalScreen({ medical }) {
         </div>
       </div>
       <div className="medical-screen__grid">
-        <div className="medical-screen__wide">
+        <div className="medical-screen__cell medical-screen__cell--steps">
           <StatusCard
             title="Passi"
             value={d ? fmtSteps(d.steps) : '—'}
@@ -279,48 +279,58 @@ export default function MedicalScreen({ medical }) {
             personality="signal"
           />
         </div>
-        <StatusCard
-          title="Frequenza cardiaca"
-          value={d ? fmt(d.bpm) : '—'}
-          detail={
-            status === 'ready' ? (
-              <MetricDetail
-                points={series('bpm')}
-                stroke="rgba(255,92,92,0.95)"
-                caption="Trend"
-                height={130}
-                unit=" bpm"
-              />
-            ) : (
-              ''
-            )
-          }
-        />
-        <div className="medical-screen__wide">
+        <div className="medical-screen__cell medical-screen__cell--bpm">
+          <StatusCard
+            title="Frequenza cardiaca"
+            value={d ? fmt(d.bpm) : '—'}
+            detail={
+              status === 'ready' ? (
+                <MetricDetail
+                  points={series('bpm')}
+                  stroke="rgba(255,92,92,0.95)"
+                  caption="Trend"
+                  height={120}
+                  unit=" bpm"
+                />
+              ) : (
+                ''
+              )
+            }
+          />
+        </div>
+        <div className="medical-screen__cell medical-screen__cell--sleep">
           <StatusCard
             title="Sonno"
             value={d ? fmtSleep(d.sleepMinutes) : '—'}
             detail={d?.sleepStages?.length ? <SleepStagesBar stages={d.sleepStages} /> : ''}
           />
         </div>
-        <StatusCard
-          title="Distanza"
-          value={d ? fmtKm(d.distanceMeters) : '—'}
-          detail={
-            status === 'ready' ? (
-              <MetricDetail
-                points={series('distanceMeters')}
-                stroke="rgba(120,210,255,0.95)"
-                caption="Trend"
-                height={130}
-                unit=" m"
-              />
-            ) : (
-              ''
-            )
-          }
-        />
-        <StatusCard title="Calorie" value={d ? fmt(d.calories, ' kcal') : '—'} detail={d?.unlock ?? ''} />
+        <div className="medical-screen__cell medical-screen__cell--distance">
+          <StatusCard
+            title="Distanza"
+            value={d ? fmtKm(d.distanceMeters) : '—'}
+            detail={
+              status === 'ready' ? (
+                <MetricDetail
+                  points={series('distanceMeters')}
+                  stroke="rgba(120,210,255,0.95)"
+                  caption="Trend"
+                  height={120}
+                  unit=" m"
+                />
+              ) : (
+                ''
+              )
+            }
+          />
+        </div>
+        <div className="medical-screen__cell medical-screen__cell--calories">
+          <StatusCard
+            title="Calorie"
+            value={d ? fmt(d.calories, ' kcal') : '—'}
+            detail={d?.unlock ?? ''}
+          />
+        </div>
       </div>
     </div>
   )

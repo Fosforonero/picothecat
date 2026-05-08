@@ -1726,10 +1726,27 @@ html[data-theme='dark'] .indoor-climate-card--mode-dehumid {
   gap: clamp(12px, 2vw, 18px);
   min-height: 0;
   overflow: visible;
+  align-items: stretch;
+  grid-template-areas:
+    'steps steps'
+    'bpm sleep'
+    'distance calories';
 }
 
-.medical-screen__wide {
-  grid-column: 1 / -1;
+.medical-screen__cell--steps {
+  grid-area: steps;
+}
+.medical-screen__cell--bpm {
+  grid-area: bpm;
+}
+.medical-screen__cell--sleep {
+  grid-area: sleep;
+}
+.medical-screen__cell--distance {
+  grid-area: distance;
+}
+.medical-screen__cell--calories {
+  grid-area: calories;
 }
 
 .medical-screen .status-card {
@@ -1849,6 +1866,12 @@ html[data-theme='dark'] .indoor-climate-card--mode-dehumid {
 @media (orientation: portrait), (max-width: 900px) {
   .medical-screen__grid {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      'steps'
+      'bpm'
+      'sleep'
+      'distance'
+      'calories';
   }
 }
 
