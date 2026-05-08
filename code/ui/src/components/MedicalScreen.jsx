@@ -80,6 +80,114 @@ function linePath(pts) {
   return out.join(' ')
 }
 
+function clamp(n, a, b) {
+  return Math.max(a, Math.min(b, n))
+}
+
+function StepsIntradayChart({ rows, dayStartMs, dayEndMs, height = 160 }) {
+  const uid = useId()
+  const raw = Array.isArray(rows) ? rows : []
+
+  const pts = raw
+    .map((r) => {
+      const t = new Date(r?.receivedAt || r?.collectedAtMillis || 0).getTime()
+      const steps = Number(r?.steps ?? r?.stepCount ?? r?.stepsCount)
+      const stepsDelta = Number(r?.stepsDelta ?? r?.deltaSteps ?? r?.steps_delta)
+      if (!Number.isFinite(t) || !Number.isFinite(steps)) return null
+      if (t < dayStartMs || t > dayEndMs) return null
+      return { t, steps, stepsDelta: Number.isFinite(stepsDelta) ? stepsDelta : null }
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.t - b.t)
+
+  if (pts.length < 2) return null
+
+  // Delta per sync: usa stepsDelta se presente, altrimenti diff del cumulativo.
+  for (let i = 0; i < pts.length; i += 1) {
+    if (pts[i].stepsDelta == null) {
+      const prev = i > 0 ? pts[i - 1].steps : 0
+      const d = pts[i].steps - prev
+      pts[i].stepsDelta = Number.isFinite(d) ? Math.max(0, d) : 0
+    }
+  }
+
+  const w = 640
+  const h = height
+  const padL = 44
+  const padR = 10
+  const padT = 10
+  const padB = 26
+  const spanT = dayEndMs - dayStartMs || 1
+
+  const maxCum = Math.max(...pts.map((p) => p.steps))
+  const minCum = Math.min(...pts.map((p) => p.steps))
+  const spanCum = maxCum - minCum || 1
+  const maxDelta = Math.max(...pts.map((p) => p.stepsDelta || 0), 1)
+
+  const xOf = (t) => ((t - dayStartMs) / spanT) * (w - padL - padR) + padL
+  const yCum = (v) => h - padB - ((v - minCum) / spanCum) * (h - padT - padB)
+  const yDelta = (v) => h - padB - (v / maxDelta) * (h - padT - padB)
+
+  const linePts = pts.map((p) => [xOf(p.t), yCum(p.steps)])
+  const dLine = linePath(linePts)
+  const last = linePts[linePts.length - 1]
+
+  const barW = clamp((w - padL - padR) / Math.max(pts.length * 1.6, 12), 6, 18)
+  const gid = `steps-${uid}`
+
+  return (
+    <svg className="linechart" viewBox={`0 0 ${w} ${h}`} width="100%" height={h} aria-hidden>
+      <defs>
+        <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#34d399" stopOpacity="0.45" />
+          <stop offset="100%" stopColor="#34d399" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+
+      <path
+        d={`M${padL},${padT + (h - padT - padB) * 0.33} H${w - padR}`}
+        stroke="rgba(255,255,255,0.10)"
+        strokeWidth="1"
+      />
+      <path
+        d={`M${padL},${padT + (h - padT - padB) * 0.66} H${w - padR}`}
+        stroke="rgba(255,255,255,0.08)"
+        strokeWidth="1"
+      />
+
+      {/* bars: delta steps */}
+      {pts.map((p, i) => {
+        const x = xOf(p.t) - barW / 2
+        const y = yDelta(p.stepsDelta || 0)
+        const hh = h - padB - y
+        return (
+          <rect
+            key={`${p.t}-${i}`}
+            x={x.toFixed(2)}
+            y={y.toFixed(2)}
+            width={barW.toFixed(2)}
+            height={hh.toFixed(2)}
+            rx="4"
+            fill="rgba(96,165,250,0.28)"
+          />
+        )
+      })}
+
+      {/* line: cumulative steps */}
+      <path d={dLine} fill="none" stroke="#34d399" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx={last[0]} cy={last[1]} r="5.2" fill="#34d399" opacity="0.18" />
+      <circle cx={last[0]} cy={last[1]} r="2.6" fill="#34d399" />
+
+      <text x={padL} y={h - 8} textAnchor="start" className="linechart__x">
+        00:00
+      </text>
+      <text x={w - padR} y={h - 8} textAnchor="end" className="linechart__x">
+        23:59
+      </text>
+    </svg>
+  )
+}
+
 function LineChart({
   points,
   stroke = 'currentColor',
@@ -384,6 +492,8 @@ export default function MedicalScreen({ medical }) {
       .map((r) => ({ t: tsOf(r), v: pickV(r) }))
       .filter((p) => p.t != null && p.v != null && Number.isFinite(Number(p.v)) && inDay(p.t))
 
+  const caloriesSeries = seriesFrom(today, (r) => r?.caloriesKcal ?? r?.calories ?? r?.caloriesTotalKcal ?? r?.kcal)
+
   const todayISO = new Date().toISOString().slice(0, 10)
   const todayAgg = weekly.find((x) => x?.day === todayISO) ?? null
   const hrStats = todayAgg?.heartRateBpm ?? null
@@ -410,14 +520,10 @@ export default function MedicalScreen({ medical }) {
             value={todayAgg?.steps != null ? fmtSteps(todayAgg.steps) : d ? fmtSteps(d.steps) : '—'}
             detail={
               status === 'ready' ? (
-                <MetricDetail
-                  points={seriesFrom(today, (r) => r?.steps ?? r?.stepCount ?? r?.stepsCount)}
-                  stroke="rgba(96,165,250,0.95)"
-                  caption="Oggi"
-                  height={150}
-                  domainStart={dayStartMs}
-                  domainEnd={dayEndMs}
-                />
+                <div className="status-card__spark">
+                  <StepsIntradayChart rows={today} dayStartMs={dayStartMs} dayEndMs={dayEndMs} height={160} />
+                  <div className="status-card__spark-caption">Oggi · barre = nuovi passi · linea = totale</div>
+                </div>
               ) : (
                 ''
               )
@@ -499,6 +605,17 @@ export default function MedicalScreen({ medical }) {
                   <div>Attive {todayAgg?.activeCaloriesKcal != null ? Math.round(todayAgg.activeCaloriesKcal) : '—'}</div>
                   {d?.unlock ? <div>{d.unlock}</div> : null}
                 </div>
+                {status === 'ready' ? (
+                  <MetricDetail
+                    points={caloriesSeries}
+                    stroke="rgba(52,211,153,0.95)"
+                    caption="Oggi · calorie cumulative"
+                    height={140}
+                    unit=" kcal"
+                    domainStart={dayStartMs}
+                    domainEnd={dayEndMs}
+                  />
+                ) : null}
               </div>
             }
           />
