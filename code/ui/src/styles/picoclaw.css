@@ -707,6 +707,33 @@ button.weather-card.weather-card--interactive {
   width: 100%;
 }
 
+.weather-card__alert {
+  margin-left: auto;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(0, 0, 0, 0.12);
+  font-weight: 750;
+  letter-spacing: 0.02em;
+  font-size: clamp(0.86rem, 1.6vw, 0.98rem);
+  white-space: nowrap;
+}
+
+.weather-card__alert--gialla {
+  background: rgba(255, 204, 0, 0.18);
+  border-color: rgba(255, 204, 0, 0.34);
+}
+
+.weather-card__alert--arancione {
+  background: rgba(255, 140, 0, 0.18);
+  border-color: rgba(255, 140, 0, 0.36);
+}
+
+.weather-card__alert--rossa {
+  background: rgba(255, 60, 60, 0.18);
+  border-color: rgba(255, 60, 60, 0.36);
+}
+
 .weather-card__status {
   margin-left: auto;
   font-size: 0.95rem;
@@ -2155,6 +2182,31 @@ select.settings-field__input {
   flex-wrap: wrap;
   font-weight: 800;
   color: var(--text-muted);
+}
+
+.wx-alert {
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 850;
+  letter-spacing: 0.02em;
+  border: 1px solid var(--border-soft);
+  background: color-mix(in srgb, var(--bg-elevated) 70%, transparent);
+  color: var(--text);
+}
+
+.wx-alert--gialla {
+  border-color: rgba(255, 204, 0, 0.35);
+  background: rgba(255, 204, 0, 0.14);
+}
+
+.wx-alert--arancione {
+  border-color: rgba(255, 140, 0, 0.36);
+  background: rgba(255, 140, 0, 0.14);
+}
+
+.wx-alert--rossa {
+  border-color: rgba(255, 60, 60, 0.36);
+  background: rgba(255, 60, 60, 0.14);
 }
 
 .weather-forecast-todaycard__strip {

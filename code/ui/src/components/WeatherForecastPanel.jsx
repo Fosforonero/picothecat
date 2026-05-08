@@ -19,6 +19,7 @@ function clamp01(x) {
  *   rows: Array<{ dayLabel: string, summary: string, condition: string, min: number | null, max: number | null, humidity?: number | null }>,
  *   hourlyToday?: Array<{ time: string, hourLabel: string, condition: string, summary: string, temp: number | null, humidity: number | null, precipProb: number | null }>,
  *   sunTimes?: { sunriseISO: string, sunsetISO: string } | null,
+ *   alert?: { level: 'gialla' | 'arancione' | 'rossa', reason?: string } | null,
  *   status?: 'loading' | 'ready' | 'error',
  * }} props
  */
@@ -29,6 +30,7 @@ export default function WeatherForecastPanel({
   rows,
   hourlyToday = [],
   sunTimes = null,
+  alert = null,
   status = 'ready',
 }) {
   useEffect(() => {
@@ -104,6 +106,12 @@ export default function WeatherForecastPanel({
                   {rows?.[0]?.dayLabel ?? 'Oggi'}
                 </h3>
                 <div className="weather-forecast-todaycard__meta">
+                  {alert?.level ? (
+                    <span className={`wx-alert wx-alert--${alert.level}`}>
+                      Allerta {alert.level}
+                      {alert.reason ? ` · ${alert.reason}` : ''}
+                    </span>
+                  ) : null}
                   {sunrise ? <span>Alba {sunrise}</span> : null}
                   {sunset ? <span>Tramonto {sunset}</span> : null}
                 </div>

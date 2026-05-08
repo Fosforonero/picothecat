@@ -225,6 +225,60 @@ export function normalizeOpenMeteoForecast(json, options = {}) {
     temperatureNow,
   }
 
+  // Allerta meteo (euristica): Open-Meteo forecast non include livelli ufficiali Protezione Civile.
+  // Usiamo un indicatore semplice basato su vento e probabilità di precipitazione nelle prossime 24h.
+  const alert = (() => {
+    if (!hourly || typeof hourly !== 'object') return null
+    const times = Array.isArray(hourly.time) ? hourly.time : null
+    const precs = Array.isArray(hourly.precipitation_probability)
+      ? hourly.precipitation_probability
+      : null
+    const winds = Array.isArray(hourly.wind_speed_10m) ? hourly.wind_speed_10m : null
+    const codes = Array.isArray(hourly.weather_code) ? hourly.weather_code : null
+    if (!times || (!precs && !winds)) return null
+
+    const nowMs = Date.now()
+    const endMs = nowMs + 24 * 60 * 60 * 1000
+    let maxProb = 0
+    let maxWind = 0
+    let hasStorm = false
+    for (let i = 0; i < times.length; i += 1) {
+      const t = times[i]
+      if (typeof t !== 'string') continue
+      const ms = new Date(t).getTime()
+      if (!Number.isFinite(ms) || ms < nowMs || ms > endMs) continue
+      const p = precs?.[i]
+      const w = winds?.[i]
+      const c = codes?.[i]
+      const pn = p != null && Number.isFinite(Number(p)) ? Number(p) : 0
+      const wn = w != null && Number.isFinite(Number(w)) ? Number(w) : 0
+      if (pn > maxProb) maxProb = pn
+      if (wn > maxWind) maxWind = wn
+      if (c != null) {
+        const { condition: cc } = openMeteoCodeToUi(Number(c), wn)
+        if (cc === 'thunderstorm') hasStorm = true
+      }
+    }
+
+    // Livelli: gialla / arancione / rossa.
+    let level = null
+    let reason = null
+    if (hasStorm || maxWind >= 20 || maxProb >= 90) {
+      level = 'rossa'
+      reason = hasStorm ? 'Temporali' : maxWind >= 20 ? 'Vento forte' : 'Piogge intense'
+    } else if (maxWind >= 15 || maxProb >= 75) {
+      level = 'arancione'
+      reason = maxWind >= 15 ? 'Vento sostenuto' : 'Piogge probabili'
+    } else if (maxWind >= 10 || maxProb >= 60) {
+      level = 'gialla'
+      reason = maxWind >= 10 ? 'Raffiche' : 'Possibili piogge'
+    }
+    if (!level) return null
+    return { level, reason }
+  })()
+
+  if (alert) weather.alert = alert
+
   const sr = daily.sunrise?.[0]
   const ss = daily.sunset?.[0]
   let sunMinutes = null

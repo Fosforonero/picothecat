@@ -40,6 +40,14 @@ export default function WeatherCard({
       <div className="weather-card__body">
         <div className="weather-card__upper">
           <div className="weather-card__label">Meteo</div>
+          {status === 'ready' && weather?.alert?.level ? (
+            <div
+              className={`weather-card__alert weather-card__alert--${weather.alert.level}`}
+              aria-label={`Allerta ${weather.alert.level}. ${weather.alert.reason || ''}`}
+            >
+              Allerta {weather.alert.level}
+            </div>
+          ) : null}
           {status !== 'ready' ? (
             <div className="weather-card__status" aria-hidden>
               {status === 'loading' ? '…' : 'offline'}

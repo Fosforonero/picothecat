@@ -124,6 +124,7 @@ export default function IdleScreen({
         rows={forecast7}
         hourlyToday={hourlyToday}
         sunTimes={sunTimes}
+        alert={weather?.alert ?? null}
         status={weatherStatus}
       />
     </>
