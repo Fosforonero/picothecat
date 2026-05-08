@@ -1759,6 +1759,19 @@ html[data-theme='dark'] .indoor-climate-card--mode-dehumid {
   filter: drop-shadow(0 12px 22px color-mix(in srgb, var(--text) 16%, transparent));
 }
 
+.linechart {
+  display: block;
+  width: 100%;
+  color: var(--text);
+}
+
+.linechart__y,
+.linechart__x {
+  fill: color-mix(in srgb, var(--text) 58%, transparent);
+  font: 700 12px/1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    monospace;
+}
+
 @media (orientation: portrait), (max-width: 900px) {
   .medical-screen__grid {
     grid-template-columns: 1fr;

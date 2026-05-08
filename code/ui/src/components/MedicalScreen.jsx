@@ -6,6 +6,12 @@ function fmt(v, suffix = '') {
   return Number.isFinite(n) ? `${Math.round(n)}${suffix}` : '—'
 }
 
+function fmtTimeHM(ms) {
+  const d = new Date(ms)
+  if (Number.isNaN(d.getTime())) return ''
+  return d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
+}
+
 function linePath(points) {
   if (points.length < 2) return ''
   const out = [`M${points[0][0].toFixed(2)},${points[0][1].toFixed(2)}`]
@@ -25,43 +31,58 @@ function linePath(points) {
   return out.join(' ')
 }
 
-function Sparkline({
+function LineChart({
   points,
   stroke = 'currentColor',
-  height = 58,
-  strokeWidth = 2.8,
+  height = 140,
+  strokeWidth = 3,
   dot = true,
   grid = true,
+  unit = '',
 }) {
   const uid = useId()
-  const ys = points
-    .map((p) => Number(p))
-    .filter((n) => Number.isFinite(n))
-    .slice(-48)
-  if (ys.length < 2) return null
+  const raw = Array.isArray(points) ? points : []
+  const ptsRaw = raw
+    .map((p) => ({ t: Number(p?.t), v: Number(p?.v) }))
+    .filter((p) => Number.isFinite(p.t) && Number.isFinite(p.v))
+    .slice(-96)
+  if (ptsRaw.length < 2) return null
 
-  const min = Math.min(...ys)
-  const max = Math.max(...ys)
-  const w = 320
+  const minT = Math.min(...ptsRaw.map((p) => p.t))
+  const maxT = Math.max(...ptsRaw.map((p) => p.t))
+  const minV = Math.min(...ptsRaw.map((p) => p.v))
+  const maxV = Math.max(...ptsRaw.map((p) => p.v))
+
+  const w = 640
   const h = height
-  const pad = 6
-  const span = max - min || 1
+  const padL = 44
+  const padR = 10
+  const padT = 10
+  const padB = 26
+  const spanT = maxT - minT || 1
+  const spanV = maxV - minV || 1
 
-  const pts = ys.map((y, i) => {
-    const x = (i / (ys.length - 1)) * (w - pad * 2) + pad
-    const yy = h - pad - ((y - min) / span) * (h - pad * 2)
+  const pts = ptsRaw.map((p) => {
+    const x = ((p.t - minT) / spanT) * (w - padL - padR) + padL
+    const yy = h - padB - ((p.v - minV) / spanV) * (h - padT - padB)
     return [x, yy]
   })
 
   const d = linePath(pts)
   const last = pts[pts.length - 1]
 
-  const area = `${d} L${w - pad},${h - pad} L${pad},${h - pad} Z`
+  const area = `${d} L${w - padR},${h - padB} L${padL},${h - padB} Z`
   const gid = `spark-${uid}`
+
+  const yTop = Math.round(maxV)
+  const yMid = Math.round((minV + maxV) / 2)
+  const yBot = Math.round(minV)
+  const xL = fmtTimeHM(minT)
+  const xR = fmtTimeHM(maxT)
 
   return (
     <svg
-      className="sparkline"
+      className="linechart"
       viewBox={`0 0 ${w} ${h}`}
       width="100%"
       height={h}
@@ -76,12 +97,12 @@ function Sparkline({
       {grid ? (
         <>
           <path
-            d={`M${pad},${pad + (h - pad * 2) * 0.33} H${w - pad}`}
+            d={`M${padL},${padT + (h - padT - padB) * 0.33} H${w - padR}`}
             stroke="rgba(255,255,255,0.10)"
             strokeWidth="1"
           />
           <path
-            d={`M${pad},${pad + (h - pad * 2) * 0.66} H${w - pad}`}
+            d={`M${padL},${padT + (h - padT - padB) * 0.66} H${w - padR}`}
             stroke="rgba(255,255,255,0.08)"
             strokeWidth="1"
           />
@@ -102,14 +123,38 @@ function Sparkline({
           <circle cx={last[0]} cy={last[1]} r="2.6" fill={stroke} />
         </>
       ) : null}
+
+      <text x={padL - 8} y={padT + 2} textAnchor="end" className="linechart__y">
+        {yTop}
+        {unit}
+      </text>
+      <text
+        x={padL - 8}
+        y={padT + (h - padT - padB) * 0.66}
+        textAnchor="end"
+        className="linechart__y"
+      >
+        {yMid}
+        {unit}
+      </text>
+      <text x={padL - 8} y={h - padB} textAnchor="end" className="linechart__y">
+        {yBot}
+        {unit}
+      </text>
+      <text x={padL} y={h - 8} textAnchor="start" className="linechart__x">
+        {xL}
+      </text>
+      <text x={w - padR} y={h - 8} textAnchor="end" className="linechart__x">
+        {xR}
+      </text>
     </svg>
   )
 }
 
-function MetricDetail({ points, stroke, caption, height }) {
+function MetricDetail({ points, stroke, caption, height, unit }) {
   return (
     <div className="status-card__spark">
-      <Sparkline points={points} stroke={stroke} height={height} />
+      <LineChart points={points} stroke={stroke} height={height} unit={unit} />
       {caption ? <div className="status-card__spark-caption">{caption}</div> : null}
     </div>
   )
@@ -142,7 +187,10 @@ export default function MedicalScreen({ medical }) {
   const status = medical?.status ?? 'loading'
   const history = medical?.history ?? []
 
-  const series = (key) => history.map((h) => h?.[key]).filter((v) => v != null)
+  const series = (key) =>
+    history
+      .map((h) => ({ t: h?.t, v: h?.[key] }))
+      .filter((p) => p.t != null && p.v != null)
   return (
     <div className="medical-screen">
       <div className="medical-screen__head">
@@ -170,7 +218,7 @@ export default function MedicalScreen({ medical }) {
                   points={series('steps')}
                   stroke="rgba(96,165,250,0.95)"
                   caption="Oggi"
-                  height={72}
+                  height={150}
                 />
               ) : (
                 ''
@@ -189,7 +237,8 @@ export default function MedicalScreen({ medical }) {
                 points={series('bpm')}
                 stroke="rgba(255,92,92,0.95)"
                 caption="Trend"
-                height={58}
+                height={130}
+                unit=" bpm"
               />
             ) : (
               ''
@@ -206,7 +255,8 @@ export default function MedicalScreen({ medical }) {
                 points={series('distanceMeters')}
                 stroke="rgba(120,210,255,0.95)"
                 caption="Trend"
-                height={58}
+                height={130}
+                unit=" m"
               />
             ) : (
               ''
