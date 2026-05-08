@@ -8,6 +8,7 @@ import WeatherGlyph from './weather/WeatherGlyph.jsx'
 export default function WeatherCard({
   weather,
   themeMode,
+  phase = 'day',
   onOpenForecast,
   status = 'ready',
 }) {
@@ -23,7 +24,7 @@ export default function WeatherCard({
 
   return (
     <Tag
-      className={`weather-card weather-card--${skin}${interactive ? ' weather-card--interactive' : ''}`}
+      className={`weather-card weather-card--${skin} weather-card--phase-${phase}${interactive ? ' weather-card--interactive' : ''}`}
       aria-label={
         interactive
           ? `Meteo: ${weather.summary}. Apri previsioni sette giorni`

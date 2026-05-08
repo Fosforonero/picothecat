@@ -48,6 +48,12 @@ export default function DeepIdleScreen({ now, weather, weatherStatus, onWake }) 
     onWake()
   }
 
+  const onWakePointerUp = (e) => {
+    // Some browsers dispatch the click after pointerup on the next screen.
+    e.preventDefault()
+    e.stopPropagation()
+  }
+
   const onWakeClick = (e) => {
     // Extra guard for browsers that still emit click after pointerdown.
     e.preventDefault()
@@ -59,6 +65,8 @@ export default function DeepIdleScreen({ now, weather, weatherStatus, onWake }) 
       type="button"
       className="deep-idle-screen"
       onPointerDown={onWakePointerDown}
+      onPointerUp={onWakePointerUp}
+      onPointerCancel={onWakePointerUp}
       onClick={onWakeClick}
       aria-label="Tocca per svegliare"
     >

@@ -54,7 +54,7 @@ export default function AppShell() {
 
   const wakeFromDeepIdle = useCallback(() => {
     // Block the synthetic click/tap that can bubble into the next screen after waking.
-    blockInputUntilRef.current = Date.now() + 650
+    blockInputUntilRef.current = Date.now() + 1400
     setPhase(UI_PHASE.IDLE)
   }, [])
 
@@ -112,6 +112,18 @@ export default function AppShell() {
     <div
       className={shellClass}
       onPointerDownCapture={(e) => {
+        if (Date.now() < blockInputUntilRef.current) {
+          e.preventDefault()
+          e.stopPropagation()
+        }
+      }}
+      onPointerUpCapture={(e) => {
+        if (Date.now() < blockInputUntilRef.current) {
+          e.preventDefault()
+          e.stopPropagation()
+        }
+      }}
+      onPointerCancelCapture={(e) => {
         if (Date.now() < blockInputUntilRef.current) {
           e.preventDefault()
           e.stopPropagation()

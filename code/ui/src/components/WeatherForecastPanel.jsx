@@ -61,7 +61,10 @@ export default function WeatherForecastPanel({
   }
   const sunrise = sunTimes?.sunriseISO ? fmtSun(sunTimes.sunriseISO) : ''
   const sunset = sunTimes?.sunsetISO ? fmtSun(sunTimes.sunsetISO) : ''
-  const showToday = rows?.[0]?.dayLabel === 'Oggi' && (hourlyToday?.length || sunrise || sunset)
+  const showToday =
+    typeof rows?.[0]?.dayLabel === 'string' &&
+    rows[0].dayLabel.startsWith('Oggi') &&
+    (hourlyToday?.length || sunrise || sunset)
   const weekRows = showToday ? rows.slice(1) : rows
 
   const body = (
@@ -97,7 +100,9 @@ export default function WeatherForecastPanel({
           <section className="weather-forecast-today" aria-label="Oggi">
             <article className="weather-forecast-todaycard">
               <div className="weather-forecast-todaycard__head">
-                <h3 className="weather-forecast-todaycard__title">Oggi</h3>
+                <h3 className="weather-forecast-todaycard__title">
+                  {rows?.[0]?.dayLabel ?? 'Oggi'}
+                </h3>
                 <div className="weather-forecast-todaycard__meta">
                   {sunrise ? <span>Alba {sunrise}</span> : null}
                   {sunset ? <span>Tramonto {sunset}</span> : null}

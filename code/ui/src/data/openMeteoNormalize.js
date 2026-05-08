@@ -88,15 +88,15 @@ function safeLocalDate(dateStr) {
  * @param {number} index
  */
 function formatForecastDayLabel(dateStr, index) {
-  if (index === 0) return 'Oggi'
-  if (index === 1) return 'Domani'
   const d = safeLocalDate(dateStr)
-  if (Number.isNaN(d.getTime())) return `Giorno ${index + 1}`
-  return d.toLocaleDateString('it-IT', {
-    weekday: 'short',
+  if (Number.isNaN(d.getTime())) return index === 0 ? 'Oggi' : `Giorno ${index + 1}`
+
+  const long = d.toLocaleDateString('it-IT', {
+    weekday: 'long',
     day: 'numeric',
-    month: 'short',
+    month: 'long',
   })
+  return index === 0 ? `Oggi ${long}` : long
 }
 
 /**

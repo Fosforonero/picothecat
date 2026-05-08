@@ -47,6 +47,20 @@ export default function IdleScreen({
         : null
   })()
 
+  const dayPhase = (() => {
+    const nowMs = now?.getTime?.()
+    const sr = sunTimes?.sunriseISO ? new Date(sunTimes.sunriseISO).getTime() : NaN
+    const ss = sunTimes?.sunsetISO ? new Date(sunTimes.sunsetISO).getTime() : NaN
+    if (!Number.isFinite(nowMs) || !Number.isFinite(sr) || !Number.isFinite(ss))
+      return themeMode === 'dark' ? 'night' : 'day'
+    const dawnEnd = sr + 60 * 60 * 1000
+    const duskStart = ss - 60 * 60 * 1000
+    if (nowMs < sr || nowMs > ss) return 'night'
+    if (nowMs >= sr && nowMs <= dawnEnd) return 'dawn'
+    if (nowMs >= duskStart && nowMs <= ss) return 'dusk'
+    return 'day'
+  })()
+
   return (
     <>
       <div className="idle-screen">
@@ -75,6 +89,7 @@ export default function IdleScreen({
             <WeatherCard
               weather={weather}
               themeMode={themeMode}
+              phase={dayPhase}
               onOpenForecast={openForecast}
               status={weatherStatus}
             />
