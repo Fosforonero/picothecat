@@ -171,6 +171,11 @@ function fmtSteps(v) {
   return Number.isFinite(n) ? Math.round(n).toLocaleString('it-IT') : '—'
 }
 
+function fmtInt(v) {
+  const n = Number(v)
+  return Number.isFinite(n) ? Math.round(n).toLocaleString('it-IT') : '—'
+}
+
 function fmtKm(meters) {
   const n = Number(meters)
   if (!Number.isFinite(n)) return '—'
@@ -239,15 +244,67 @@ function SleepStagesBar({ stages }) {
   )
 }
 
+function fmtPct(v) {
+  const n = Number(v)
+  return Number.isFinite(n) ? `${Math.round(n)}%` : '—'
+}
+
+function vo2Category(v) {
+  const n = Number(v)
+  if (!Number.isFinite(n)) return null
+  if (n < 35) return 'Scarso'
+  if (n < 42) return 'Nella norma'
+  if (n < 49) return 'Buono'
+  if (n < 55) return 'Molto buono'
+  return 'Eccellente'
+}
+
+function Donut({ value, total, color = '#34d399', label }) {
+  const v = Math.max(0, Number(value) || 0)
+  const t = Math.max(1, Number(total) || 1)
+  const p = Math.max(0, Math.min(1, v / t))
+  const r = 18
+  const c = 2 * Math.PI * r
+  const dash = `${(c * p).toFixed(2)} ${(c * (1 - p)).toFixed(2)}`
+  return (
+    <div className="donut">
+      <svg viewBox="0 0 48 48" width="48" height="48" aria-hidden>
+        <circle cx="24" cy="24" r={r} fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth="6" />
+        <circle
+          cx="24"
+          cy="24"
+          r={r}
+          fill="none"
+          stroke={color}
+          strokeWidth="6"
+          strokeLinecap="round"
+          strokeDasharray={dash}
+          transform="rotate(-90 24 24)"
+        />
+      </svg>
+      <div className="donut__txt">
+        <div className="donut__label">{label}</div>
+        <div className="donut__v">{Math.round(p * 100)}%</div>
+      </div>
+    </div>
+  )
+}
+
 export default function MedicalScreen({ medical }) {
   const d = medical?.data ?? null
   const status = medical?.status ?? 'loading'
   const history = medical?.history ?? []
+  const weekly = medical?.weekly ?? []
+  const recent = medical?.recent ?? []
 
   const series = (key) =>
     history
       .map((h) => ({ t: h?.t, v: h?.[key] }))
       .filter((p) => p.t != null && p.v != null)
+
+  const todayISO = new Date().toISOString().slice(0, 10)
+  const todayAgg = weekly.find((x) => x?.day === todayISO) ?? null
+  const hrStats = todayAgg?.heartRateBpm ?? null
   return (
     <div className="medical-screen">
       <div className="medical-screen__head">
@@ -268,7 +325,7 @@ export default function MedicalScreen({ medical }) {
         <div className="medical-screen__cell medical-screen__cell--steps">
           <StatusCard
             title="Passi"
-            value={d ? fmtSteps(d.steps) : '—'}
+            value={todayAgg?.steps != null ? fmtSteps(todayAgg.steps) : d ? fmtSteps(d.steps) : '—'}
             detail={
               status === 'ready' ? (
                 <MetricDetail
@@ -291,13 +348,20 @@ export default function MedicalScreen({ medical }) {
             value={d ? fmt(d.bpm) : '—'}
             detail={
               status === 'ready' ? (
-                <MetricDetail
-                  points={series('bpm')}
-                  stroke="rgba(255,92,92,0.95)"
-                  caption="Trend"
-                  height={120}
-                  unit=" bpm"
-                />
+                <div className="salute-bpm-detail">
+                  <div className="salute-bpm-detail__stats">
+                    <span>avg {hrStats?.avg != null ? Math.round(hrStats.avg) : '—'}</span>
+                    <span>min {hrStats?.min != null ? Math.round(hrStats.min) : '—'}</span>
+                    <span>max {hrStats?.max != null ? Math.round(hrStats.max) : '—'}</span>
+                  </div>
+                  <MetricDetail
+                    points={recent.map((r) => ({ t: new Date(r.receivedAt || r.collectedAtMillis || 0).getTime(), v: r.heartRateBpm })).filter((p) => Number.isFinite(p.t) && Number.isFinite(Number(p.v)))}
+                    stroke="rgba(255,92,92,0.95)"
+                    caption="Oggi"
+                    height={120}
+                    unit=" bpm"
+                  />
+                </div>
               ) : (
                 ''
               )
@@ -334,7 +398,35 @@ export default function MedicalScreen({ medical }) {
           <StatusCard
             title="Calorie"
             value={d ? fmt(d.calories, ' kcal') : '—'}
-            detail={d?.unlock ?? ''}
+            detail={
+              <div className="salute-calories-detail">
+                <Donut
+                  value={todayAgg?.activeCaloriesKcal ?? 0}
+                  total={todayAgg?.caloriesKcal ?? d?.calories ?? 0}
+                  color="#34d399"
+                  label="Attive"
+                />
+                <div className="salute-calories-detail__meta">
+                  <div>Totali {todayAgg?.caloriesKcal != null ? Math.round(todayAgg.caloriesKcal) : fmtInt(d?.calories)}</div>
+                  <div>Attive {todayAgg?.activeCaloriesKcal != null ? Math.round(todayAgg.activeCaloriesKcal) : '—'}</div>
+                  {d?.unlock ? <div>{d.unlock}</div> : null}
+                </div>
+              </div>
+            }
+          />
+        </div>
+        <div className="medical-screen__cell medical-screen__cell--spo2">
+          <StatusCard
+            title="SpO₂"
+            value={todayAgg?.spo2Percent != null ? fmtPct(todayAgg.spo2Percent) : '—'}
+            detail={todayAgg?.spo2Percent != null ? (Number(todayAgg.spo2Percent) >= 95 ? 'OK' : 'Bassa') : ''}
+          />
+        </div>
+        <div className="medical-screen__cell medical-screen__cell--vo2">
+          <StatusCard
+            title="VO₂ max"
+            value={todayAgg?.vo2Max != null ? `${Number(todayAgg.vo2Max).toFixed(0)}` : '—'}
+            detail={todayAgg?.vo2Max != null ? vo2Category(todayAgg.vo2Max) : ''}
           />
         </div>
       </div>

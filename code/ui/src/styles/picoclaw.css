@@ -1730,7 +1730,8 @@ html[data-theme='dark'] .indoor-climate-card--mode-dehumid {
   grid-template-areas:
     'steps steps'
     'bpm sleep'
-    'distance calories';
+    'distance calories'
+    'spo2 vo2';
 }
 
 .medical-screen__cell {
@@ -1757,6 +1758,12 @@ html[data-theme='dark'] .indoor-climate-card--mode-dehumid {
 }
 .medical-screen__cell--calories {
   grid-area: calories;
+}
+.medical-screen__cell--spo2 {
+  grid-area: spo2;
+}
+.medical-screen__cell--vo2 {
+  grid-area: vo2;
 }
 
 .medical-screen .status-card {
@@ -1881,8 +1888,41 @@ html[data-theme='dark'] .indoor-climate-card--mode-dehumid {
       'bpm'
       'sleep'
       'distance'
-      'calories';
+      'calories'
+      'spo2'
+      'vo2';
   }
+}
+
+.salute-bpm-detail__stats {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  color: var(--text-muted);
+  font-weight: 750;
+}
+
+.salute-calories-detail {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.donut {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.donut__label {
+  color: var(--text-muted);
+  font-weight: 750;
+  letter-spacing: 0.02em;
+}
+
+.donut__v {
+  font-weight: 900;
 }
 
 .mode-placeholder-screen__title {

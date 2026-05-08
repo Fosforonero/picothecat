@@ -183,6 +183,8 @@ export function useMedical(baseUrl, { intervalMs = 20000, deviceId = '' } = {}) 
         history,
         lastUrl: null,
         lastHttpStatus: null,
+        weekly: [],
+        recent: [],
       }
     }
     return {
@@ -192,6 +194,8 @@ export function useMedical(baseUrl, { intervalMs = 20000, deviceId = '' } = {}) 
       history,
       lastUrl: null,
       lastHttpStatus: null,
+      weekly: [],
+      recent: [],
     }
   })
 
@@ -200,44 +204,43 @@ export function useMedical(baseUrl, { intervalMs = 20000, deviceId = '' } = {}) 
     const controller = new AbortController()
     const base = baseUrl ? baseUrl.replace(/\/$/, '') : ''
     const qs = deviceId ? `?deviceId=${encodeURIComponent(String(deviceId))}` : ''
-    const candidates = [
-      base ? `${base}/api/v1/sync/latest${qs}` : null,
-      base ? `${base}/api/v1/sync/today${qs}` : null,
-    ].filter(Boolean)
+    const urlLatest = base ? `${base}/api/v1/sync/latest${qs}` : null
+    const urlWeekly = base ? `${base}/api/v1/sync/weekly${qs}` : null
+    const urlRecent = base
+      ? `${base}/api/v1/sync/recent?limit=48${deviceId ? `&deviceId=${encodeURIComponent(String(deviceId))}` : ''}`
+      : null
 
     const tick = async () => {
       if (!alive) return
       setState((s) => ({ ...s, status: s.data ? 'ready' : 'loading' }))
       try {
-        /** @type {any} */
-        let json = null
-        let lastHttpErr = null
-        let lastUrl = null
-        let lastHttpStatus = null
-        for (const url of candidates) {
-          try {
-            const res = await fetch(url, {
-              signal: controller.signal,
-              cache: 'no-store',
-            })
-            lastUrl = url
-            lastHttpStatus = res.status
-            if (!res.ok) {
-              lastHttpErr = `HTTP ${res.status} (${url})`
-              continue
-            }
-            json = await res.json()
-            break
-          } catch (e) {
-            // Network/CORS error: try next candidate.
-            lastUrl = url
-            lastHttpStatus = null
-            lastHttpErr = `${e?.message ?? 'Failed to fetch'} (${url})`
-          }
-        }
-        if (json == null) throw new Error(lastHttpErr ?? 'Failed to fetch')
+        if (!urlLatest) throw new Error('Missing base url')
 
-        const data = normalizeMedical(json)
+        const [latestRes, weeklyRes, recentRes] = await Promise.all([
+          fetch(urlLatest, { signal: controller.signal, cache: 'no-store' }),
+          urlWeekly
+            ? fetch(urlWeekly, { signal: controller.signal, cache: 'no-store' })
+            : Promise.resolve(null),
+          urlRecent
+            ? fetch(urlRecent, { signal: controller.signal, cache: 'no-store' })
+            : Promise.resolve(null),
+        ])
+
+        if (!latestRes.ok) throw new Error(`HTTP ${latestRes.status} (${urlLatest})`)
+        const latestJson = await latestRes.json()
+        const data = normalizeMedical(latestJson)
+
+        let weekly = []
+        if (weeklyRes && weeklyRes.ok) {
+          const j = await weeklyRes.json()
+          weekly = Array.isArray(j?.days) ? j.days : []
+        }
+        let recent = []
+        if (recentRes && recentRes.ok) {
+          const j = await recentRes.json()
+          recent = Array.isArray(j?.records) ? j.records : []
+        }
+
         if (!alive) return
         setState((s) => {
           const nextHistory = [
@@ -259,8 +262,10 @@ export function useMedical(baseUrl, { intervalMs = 20000, deviceId = '' } = {}) 
             data,
             lastError: null,
             history: nextHistory,
-            lastUrl,
-            lastHttpStatus,
+            lastUrl: urlLatest,
+            lastHttpStatus: latestRes.status,
+            weekly,
+            recent,
           }
         })
         saveCache({ ts: Date.now(), data })
