@@ -1772,6 +1772,79 @@ html[data-theme='dark'] .indoor-climate-card--mode-dehumid {
     monospace;
 }
 
+.sleepbar {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sleepbar__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+  color: var(--text-muted);
+  font-weight: 750;
+  letter-spacing: 0.01em;
+  font-size: 0.95rem;
+}
+
+.sleepbar__l::before {
+  content: '';
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  margin-right: 8px;
+  vertical-align: -1px;
+  background: currentColor;
+  opacity: 0.95;
+}
+
+.sleepbar__l--light {
+  color: rgba(120, 170, 255, 0.92);
+}
+.sleepbar__l--awake {
+  color: rgba(255, 120, 120, 0.92);
+}
+.sleepbar__l--deep {
+  color: rgba(70, 120, 255, 0.92);
+}
+.sleepbar__l--rem {
+  color: rgba(170, 140, 255, 0.92);
+}
+
+.sleepbar__track {
+  position: relative;
+  height: 56px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border-soft);
+  background: color-mix(in srgb, var(--bg-elevated) 70%, transparent);
+  box-shadow: var(--shadow-inner);
+}
+
+.sleepbar__seg {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 14px;
+  opacity: 0.92;
+}
+
+.sleepbar__seg--light {
+  background: linear-gradient(180deg, rgba(120, 170, 255, 0.85), rgba(120, 170, 255, 0.55));
+}
+.sleepbar__seg--awake {
+  background: linear-gradient(180deg, rgba(255, 120, 120, 0.85), rgba(255, 120, 120, 0.55));
+}
+.sleepbar__seg--deep {
+  background: linear-gradient(180deg, rgba(70, 120, 255, 0.9), rgba(70, 120, 255, 0.62));
+}
+.sleepbar__seg--rem {
+  background: linear-gradient(180deg, rgba(170, 140, 255, 0.88), rgba(170, 140, 255, 0.6));
+}
+
 @media (orientation: portrait), (max-width: 900px) {
   .medical-screen__grid {
     grid-template-columns: 1fr;

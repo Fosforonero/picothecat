@@ -182,6 +182,57 @@ function fmtSleep(mins) {
   return `${h}h ${m.toString().padStart(2, '0')}m`
 }
 
+function normalizeSleepStageKey(stage) {
+  const s = String(stage || '').toLowerCase()
+  if (s.includes('rem')) return 'rem'
+  if (s.includes('deep') || s.includes('prof')) return 'deep'
+  if (s.includes('light') || s.includes('legg')) return 'light'
+  if (s.includes('awake') || s.includes('sveg')) return 'awake'
+  return 'light'
+}
+
+function SleepStagesBar({ stages }) {
+  const segs = Array.isArray(stages) ? stages : []
+  const parsed = segs
+    .map((x) => {
+      const start = new Date(String(x.start)).getTime()
+      const end = new Date(String(x.end)).getTime()
+      if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null
+      return { k: normalizeSleepStageKey(x.stage), start, end }
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.start - b.start)
+
+  if (parsed.length < 2) return null
+
+  const t0 = parsed[0].start
+  const t1 = parsed[parsed.length - 1].end
+  const span = Math.max(1, t1 - t0)
+
+  return (
+    <div className="sleepbar" aria-hidden>
+      <div className="sleepbar__legend">
+        <span className="sleepbar__l sleepbar__l--light">Leggero</span>
+        <span className="sleepbar__l sleepbar__l--awake">Sveglio</span>
+        <span className="sleepbar__l sleepbar__l--deep">Profondo</span>
+        <span className="sleepbar__l sleepbar__l--rem">REM</span>
+      </div>
+      <div className="sleepbar__track">
+        {parsed.map((p, i) => (
+          <span
+            key={`${p.k}-${p.start}-${i}`}
+            className={`sleepbar__seg sleepbar__seg--${p.k}`}
+            style={{
+              left: `${((p.start - t0) / span) * 100}%`,
+              width: `${((p.end - p.start) / span) * 100}%`,
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function MedicalScreen({ medical }) {
   const d = medical?.data ?? null
   const status = medical?.status ?? 'loading'
@@ -245,7 +296,13 @@ export default function MedicalScreen({ medical }) {
             )
           }
         />
-        <StatusCard title="Sonno" value={d ? fmtSleep(d.sleepMinutes) : '—'} detail="" />
+        <div className="medical-screen__wide">
+          <StatusCard
+            title="Sonno"
+            value={d ? fmtSleep(d.sleepMinutes) : '—'}
+            detail={d?.sleepStages?.length ? <SleepStagesBar stages={d.sleepStages} /> : ''}
+          />
+        </div>
         <StatusCard
           title="Distanza"
           value={d ? fmtKm(d.distanceMeters) : '—'}

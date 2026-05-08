@@ -58,6 +58,28 @@ function pickNumber(obj, keys) {
   return null
 }
 
+function pickStages(obj, keys) {
+  for (const k of keys) {
+    const v = obj?.[k]
+    if (!Array.isArray(v)) continue
+    const out = v
+      .map((s) => {
+        if (!s || typeof s !== 'object') return null
+        const stageRaw = s.stage ?? s.phase ?? s.type ?? s.state
+        const startRaw = s.start ?? s.from ?? s.t0 ?? s.tsStart
+        const endRaw = s.end ?? s.to ?? s.t1 ?? s.tsEnd
+        const stage = stageRaw != null ? String(stageRaw).toLowerCase() : ''
+        const start = startRaw != null ? String(startRaw) : ''
+        const end = endRaw != null ? String(endRaw) : ''
+        if (!stage || !start || !end) return null
+        return { stage, start, end }
+      })
+      .filter(Boolean)
+    if (out.length) return out
+  }
+  return null
+}
+
 function normalizeMedical(json) {
   const bpm = pickNumber(json, ['bpm', 'heartRate', 'hr'])
   const steps = pickNumber(json, ['steps', 'stepCount'])
@@ -71,6 +93,13 @@ function normalizeMedical(json) {
     'caloriesBurned',
   ])
   const sleepMinutes = pickNumber(json, ['sleepMinutes', 'sleep_min', 'sleep'])
+  const sleepStages = pickStages(json, [
+    'sleepStages',
+    'sleep_stages',
+    'sleepPhases',
+    'sleep_phases',
+    'stages',
+  ])
   const distanceMeters = pickNumber(json, [
     'distanceMeters',
     'distance_m',
@@ -91,6 +120,7 @@ function normalizeMedical(json) {
     steps: steps != null ? Math.round(steps) : null,
     calories: calories != null ? Math.round(calories) : null,
     sleepMinutes: sleepMinutes != null ? Math.round(sleepMinutes) : null,
+    sleepStages,
     distanceMeters: distanceMeters != null ? Math.round(distanceMeters) : null,
     bodyTempC: bodyTempC != null ? Number(bodyTempC) : null,
     spo2: spo2 != null ? Math.round(spo2) : null,
