@@ -127,6 +127,7 @@ export default function WeatherLocationSettings({ weather }) {
   const [msg, setMsg] = useState('')
   const [gpsStatus, setGpsStatus] = useState('idle') // 'idle' | 'loading' | 'error'
   const [addrStatus, setAddrStatus] = useState('idle') // 'idle' | 'loading' | 'error'
+  const [storagePersisted, setStoragePersisted] = useState(null)
 
   useEffect(() => {
     const onStorage = () => {
@@ -138,6 +139,22 @@ export default function WeatherLocationSettings({ weather }) {
     return () => {
       window.removeEventListener('storage', onStorage)
       window.removeEventListener('picoclaw-weather-override-changed', onStorage)
+    }
+  }, [])
+
+  useEffect(() => {
+    let alive = true
+    const fn = async () => {
+      try {
+        const ok = await navigator?.storage?.persisted?.()
+        if (alive) setStoragePersisted(Boolean(ok))
+      } catch {
+        if (alive) setStoragePersisted(null)
+      }
+    }
+    void fn()
+    return () => {
+      alive = false
     }
   }, [])
 
@@ -481,6 +498,12 @@ export default function WeatherLocationSettings({ weather }) {
               {override ? 'attivo' : 'non attivo'}
             </span>
           </span>
+          {storagePersisted === false ? (
+            <span className="settings-hint">
+              Nota: il browser sembra in modalità “non persistente” (es. incognito). Le posizioni
+              salvate potrebbero non restare dopo un riavvio.
+            </span>
+          ) : null}
         </div>
 
         {msg ? <p className="settings-msg">{msg}</p> : null}
