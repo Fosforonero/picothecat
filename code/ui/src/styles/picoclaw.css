@@ -927,7 +927,7 @@ html[data-theme='dark'] .weather-card--cloudy .weather-card__meta {
       rgba(255, 255, 255, 0.045) 10px,
       rgba(255, 255, 255, 0.045) 11px
     ),
-    linear-gradient(175deg, #5a6a7e 0%, #3d4a5c 45%, #2a3340 100%);
+    linear-gradient(175deg, #8fa4bd 0%, #6c829c 48%, #55697f 100%);
 }
 
 .weather-card--rainy .weather-card__body {
@@ -935,7 +935,7 @@ html[data-theme='dark'] .weather-card--cloudy .weather-card__meta {
   background: linear-gradient(
     180deg,
     transparent 0%,
-    rgba(10, 14, 20, 0.45) 100%
+    rgba(10, 14, 20, 0.28) 100%
   );
 }
 
@@ -1697,6 +1697,7 @@ html[data-theme='dark'] .indoor-climate-card--mode-dehumid {
   gap: 14px;
   padding: clamp(14px, 2.6vw, 24px);
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .medical-screen__head {
@@ -1724,7 +1725,7 @@ html[data-theme='dark'] .indoor-climate-card--mode-dehumid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: clamp(12px, 2vw, 18px);
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .medical-screen__wide {

@@ -86,11 +86,13 @@ function normalizeMedical(json) {
     json && typeof json === 'object'
       ? json.data && typeof json.data === 'object'
         ? json.data
+        : json.record && typeof json.record === 'object'
+          ? json.record
         : json.latest && typeof json.latest === 'object'
           ? json.latest
           : json
       : json
-  const bpm = pickNumber(root, ['bpm', 'heartRate', 'hr'])
+  const bpm = pickNumber(root, ['bpm', 'heartRate', 'hr', 'heartRateBpm'])
   const steps = pickNumber(root, ['steps', 'stepCount'])
   const calories = pickNumber(root, [
     'calories',
@@ -100,6 +102,7 @@ function normalizeMedical(json) {
     'activeKcal',
     'active_kcal',
     'caloriesBurned',
+    'caloriesKcal',
   ])
   const sleepMinutes = pickNumber(root, ['sleepMinutes', 'sleep_min', 'sleep'])
   const sleepStages = pickStages(root, [
@@ -109,6 +112,30 @@ function normalizeMedical(json) {
     'sleep_phases',
     'stages',
   ])
+  let sleepStagesFromJson = null
+  if (!sleepStages) {
+    const raw = root?.sleepStagesJson
+    if (typeof raw === 'string' && raw.trim().startsWith('[')) {
+      const parsed = safeJsonParse(raw)
+      if (Array.isArray(parsed)) {
+        sleepStagesFromJson = parsed
+          .map((s) => {
+            if (!s || typeof s !== 'object') return null
+            const stage = s.stage != null ? String(s.stage) : ''
+            const startMs = Number(s.startMs ?? s.start ?? s.from)
+            const endMs = Number(s.endMs ?? s.end ?? s.to)
+            if (!stage || !Number.isFinite(startMs) || !Number.isFinite(endMs))
+              return null
+            return {
+              stage: String(stage).toLowerCase(),
+              start: new Date(startMs).toISOString(),
+              end: new Date(endMs).toISOString(),
+            }
+          })
+          .filter(Boolean)
+      }
+    }
+  }
   const distanceMeters = pickNumber(root, [
     'distanceMeters',
     'distance_m',
@@ -121,7 +148,14 @@ function normalizeMedical(json) {
     'tempC',
   ])
   const spo2 = pickNumber(root, ['spo2', 'SpO2'])
-  const ts = root?.ts != null ? String(root.ts) : null
+  const ts =
+    root?.ts != null
+      ? String(root.ts)
+      : root?.receivedAt != null
+        ? String(root.receivedAt)
+        : root?.collectedAtMillis != null && Number.isFinite(Number(root.collectedAtMillis))
+          ? new Date(Number(root.collectedAtMillis)).toISOString()
+          : null
 
   return {
     ts,
@@ -129,7 +163,7 @@ function normalizeMedical(json) {
     steps: steps != null ? Math.round(steps) : null,
     calories: calories != null ? Math.round(calories) : null,
     sleepMinutes: sleepMinutes != null ? Math.round(sleepMinutes) : null,
-    sleepStages,
+    sleepStages: sleepStages ?? sleepStagesFromJson,
     distanceMeters: distanceMeters != null ? Math.round(distanceMeters) : null,
     bodyTempC: bodyTempC != null ? Number(bodyTempC) : null,
     spo2: spo2 != null ? Math.round(spo2) : null,
